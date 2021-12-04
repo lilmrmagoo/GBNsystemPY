@@ -46,7 +46,7 @@ async def accept(
             pass
         else:
             newDict = {"Name": name, "Link": googledoc, "Form Type": submissiontype}
-            db[dataBaseKey] = {name:newDict}
+            db[dataBaseKey] = {f"{submissiontype}#1":newDict}
         print(submiter.id)
 
     else:
