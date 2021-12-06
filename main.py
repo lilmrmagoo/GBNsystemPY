@@ -5,8 +5,13 @@ from replit import db
 bot = discord.Bot()
 token = os.environ['TOKEN']
 
-
-
+def countKeysWith(dict, type):
+    dictKeys = dict.keys() 
+    count = 0 
+    for i in dictKeys:
+        if i.startswith(type): 
+            count+=1
+    return count 
 def validGoogleDoc(input):
     link = "https://docs.google.com/"
     if (input.startswith(link)):
@@ -43,11 +48,15 @@ async def accept(
     if (validGoogleDoc(googledoc)):
         dataBaseKey = str(submiter.id) + "'s forms"
         if doesKeyExist(dataBaseKey):
-            pass
+            userForms = db.get(dataBaseKey)
+            formId = countKeysWith(userForms, submissiontype) + 1
+            userForms[f"{submissiontype}#{formId}"] = {"Name": name, "Link": googledoc, "Form Type": submissiontype}
+
         else:
             newDict = {"Name": name, "Link": googledoc, "Form Type": submissiontype}
             db[dataBaseKey] = {f"{submissiontype}#1":newDict}
         print(submiter.id)
+        print(ctx.guild.id)
 
     else:
         await ctx.respond('no link provided')
