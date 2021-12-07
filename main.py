@@ -4,7 +4,18 @@ import os
 from replit import db
 bot = discord.Bot()
 token = os.environ['TOKEN']
-
+adminRoles = ['helper','Moderators','Owner']
+def findGapInIds(dict, type):
+    lastid = 1
+    for i in dict.keys():
+        if i.startswith(type):
+            currentid = int(i[i.find('#')+1])
+            if currentid == lastid:
+                lastid+=1
+                continue
+            else:
+                return currentid
+    return False
 def countKeysWith(dict, type):
     dictKeys = dict.keys() 
     count = 0 
@@ -20,7 +31,7 @@ def validGoogleDoc(input):
         return False
 
 def doesKeyExist(key):
-    if db[key]: return True 
+    if db.prefix(key): return True 
     else: return False
 def userHasRole(member, role):
     membersRoles = member.roles
@@ -31,36 +42,60 @@ def userHasRole(member, role):
 
     
 
-#@bot.on_ready()
-#async def on_ready():
+@bot.on_ready()
+async def on_ready(self):
+    print(f'system online logged in as {self}')
 
 
-@bot.slash_command(guild_ids=[472944754397806619], name= 'accept')
-@permissions.has_any_role("helper", "Moderators", "Owner")
-async def accept(
+@bot.slash_command(guild_ids=[472944754397806619])
+async def createform(
     ctx, 
-    googledoc: Option(str, "the submission link", required=True), 
-    submissiontype: Option(str, "type of submission", choices=["Gunpla","Character", "Other"]),
-    submiter: Option(discord.Member, "the user who submited the submission"),
-    name: Option(str, "Name for entry")
+    googledoc: Option(str, "the form link", required=True), 
+    formtype: Option(str, "type of form", choices=["Gunpla","Character", "Other"], required=True),
+    name: Option(str, "Name for character or gunpla", required=True),
+    owner: Option(discord.Member, "The owner of the form", required=False)
 ):
-    print('command accepted activated')
+    print('command createform activated')
     if (validGoogleDoc(googledoc)):
-        dataBaseKey = str(submiter.id) + "'s forms"
+        if owner == None:
+            owner = ctx.author
+        dataBaseKey = str(owner.id) + "'s forms"
         if doesKeyExist(dataBaseKey):
             userForms = db.get(dataBaseKey)
-            formId = countKeysWith(userForms, submissiontype) + 1
-            userForms[f"{submissiontype}#{formId}"] = {"Name": name, "Link": googledoc, "Form Type": submissiontype}
-
+            gap = findGapInIds(userForms, formtype)
+            if gap == False:
+                formId = countKeysWith(userForms, formtype) + 1
+            else:
+                formId = gap +1  
+            userForms[f"{formtype}#{formId}"] = {"Name": name, "Link": googledoc, "Form Type": formtype}
+            db[dataBaseKey] = userForms
         else:
-            newDict = {"Name": name, "Link": googledoc, "Form Type": submissiontype}
-            db[dataBaseKey] = {f"{submissiontype}#1":newDict}
-        print(submiter.id)
-        print(ctx.guild.id)
+            newDict = {"Name": name, "Link": googledoc, "Form Type": formtype}
+            db[dataBaseKey] = {f"{formtype}#1":newDict}
+        await ctx.respond(f"{owner}'s {formtype} has been created!")
+        print(dataBaseKey)
+        print(db[dataBaseKey])
 
     else:
-        await ctx.respond('no link provided')
-        print(submiter)
+        await ctx.respond('non valid link provided')
+        print(owner)
+@bot.slash_command(guild_ids=[472944754397806619])
+async def deleteform(
+    ctx, 
+    by: Option(str,'the selector used to delete the form', choices=['Id','Name'], required=True),
+    form: Option(str, 'the form you want to delete', required=True),
+    owner: Option(discord.Member, 'the owner of the form', required=False)
+):
+    if owner == None:
+        owner = ctx.author
+    dataBaseKey = str(owner.id) + "'s forms"
+    userForms = db[dataBaseKey]
+    if by == 'Id'
 
+@bot.slash_command(guild_ids=[472944754397806619])
+@permissions.has_any_role(*adminRoles)
+async def delkey(ctx, owner: Option(discord.Member, 'the users forms to delete')):
+    dataBaseKey = str(owner.id) + "'s forms"
+    del db[dataBaseKey]
+    await ctx.respond('key has been deleted')
 bot.run(token)
-
