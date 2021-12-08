@@ -1,8 +1,9 @@
+import keepalive
 import discord
 from discord.commands import Option, permissions
 import os
 from replit import db
-
+keepalive.keep_alive()
 bot = discord.Bot()
 token = os.environ['TOKEN']
 adminRoles = ['helper', 'Moderators', 'Owner']
@@ -101,7 +102,7 @@ async def createform(ctx,
 @bot.slash_command(guild_ids=[*guildids])
 async def deleteform(
     ctx, 
-    by: Option(str,'the selector used to delete the form',choices=['Id', 'Name'],required=True),
+    by: Option(str,'the selector used to delete the form',choices=['Name', 'Id'],required=True),
     form: Option(str,'the form you want to delete. ex: \'1\' or \'og gundam\'',required=True),
     type: Option(str,'the type of form being deleted',choices=["Gunpla", "Character", "Other"],required=True),
     owner: Option(discord.Member,'the owner of the form. Requires perms to use',required=False,default=None)):
@@ -123,7 +124,7 @@ async def deleteform(
                     break
     elif by == 'Name':
         for i in userForms:
-            if userForms[i]['Name'] == form:
+            if userForms[i]['Name'].casefold() == form.casefold():
                 del userForms[i]
                 await ctx.respond(f'{type}: {form} deleted by {by}')
                 break
@@ -132,7 +133,7 @@ async def deleteform(
 @bot.slash_command(guild_ids=[*guildids])
 async def get(
     ctx, 
-    by: Option(str,'the selector used to get the form',choices=['Id', 'Name'],required=True),
+    by: Option(str,'the selector used to get the form',choices=['Name', 'Id'],required=True),
     form: Option(str,'the form you want to get. ex: \'1\' or \'og gundam\'',required=True),
     type: Option(str,'the type of form to get',choices=["Gunpla", "Character", "Other"],required=True),
     owner: Option(discord.Member,'the owner of the form. deafult is command activator',required=False,default=None)
@@ -153,7 +154,7 @@ async def get(
                     break
         elif by == 'Name':
             for i in userForms:
-                if userForms[i]['Name'] == form:
+                if userForms[i]['Name'].casefold() == form.casefold():
                     embed=discord.Embed(title=userForms[i]['Name'], url=userForms[i]['Link'], description=userForms[i]['Desc'], color=0x2ca098)
                     embed.set_author(name=ctx.bot.user, icon_url=ctx.bot.user.display_avatar)
                     embed.set_thumbnail(url=userForms[i]['Image'])
@@ -165,7 +166,7 @@ async def get(
 @bot.slash_command(guild_ids=[*guildids])
 async def editform(
     ctx, 
-    by: Option(str,'the selector used to get the form',choices=['Id', 'Name'],required=True),
+    by: Option(str,'the selector used to get the form',choices=['Name', 'Id'],required=True),
     form: Option(str,'the form you want to get. ex: \'1\' or \'og gundam\'',required=True),
     type: Option(str,'the type of form to get',choices=["Gunpla", "Character", "Other"],required=True),
     inputfield: Option(str,'the field you want to edit', choices=["Name","Link","Desc",'Image'],required=True),
@@ -189,7 +190,7 @@ async def editform(
                 break
     elif by == 'Name':
         for i in userForms:
-            if userForms[i]['Name'] == form:
+            if userForms[i]['Name'].casefold() == form.casefold():
                 userForms[i][inputfield] = inputdata
                 await ctx.respond(f'{inputfield} changed to {inputdata} on {userForms[i]["Name"]}',ephemeral=True)
                 break
@@ -200,6 +201,11 @@ async def delkey(ctx, owner: Option(discord.Member,'the users forms to delete'))
     dataBaseKey = str(owner.id) + "'s forms"
     del db[dataBaseKey]
     await ctx.respond('key has been deleted', ephemeral=True)
+@bot.slash_command(guild_ids=[*guildids])
+@permissions.has_any_role(*adminRoles)
+async def getkey(ctx, owner: Option(discord.Member,'the users forms to delete')):
+    dataBaseKey = str(owner.id) + "'s forms"
+    await ctx.respond(str(db[dataBaseKey]), ephemeral=True)
 
 
 bot.run(token)
