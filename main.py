@@ -9,6 +9,7 @@ token = os.environ['TOKEN']
 adminRoles = ['helper', 'Moderators', 'Owner']
 guildids= [479493485037355022,472944754397806619]
 
+
 def findGapInIds(dict, type):
     id = f'{type}#1'
     iterable = 1
@@ -133,10 +134,11 @@ async def deleteform(
 @bot.slash_command(guild_ids=[*guildids])
 async def get(
     ctx, 
-    by: Option(str,'the selector used to get the form',choices=['Name', 'Id'],required=True),
-    form: Option(str,'the form you want to get. ex: \'1\' or \'og gundam\'',required=True),
-    type: Option(str,'the type of form to get',choices=["Gunpla", "Character", "Other"],required=True),
-    owner: Option(discord.Member,'the owner of the form. deafult is command activator',required=False,default=None)
+    form: Option(str,'the form you want to get. ex: \'My gundam\' or \'my character\'' ,required=True),
+    type: Option(str,'the type of form to get, only required when searching by id',choices=["Gunpla", "Character", "Other"],required=False,default=None),
+    owner: Option(discord.Member,'the owner of the form. deafult is command activator',required=False,default=None),
+    public: Option(bool, "makes the message only visible to you if false, True by default",required=False, default=True),
+    by: Option(str,'the selector used to get the form',choices=['Name', 'Id'],required=False, default='Name')
 ):
     print('command get activated')
     if owner == None:
@@ -145,20 +147,28 @@ async def get(
     if doesKeyExist(dataBaseKey):
         userForms = db.get(dataBaseKey)
         if by == 'Id':
-            for i in userForms:
-                if i.startswith(type) and i[i.find('#') + 1:] == form:
-                    embed=discord.Embed(title=userForms[i]['Name'], url=userForms[i]['Link'], description=userForms[i]['Desc'], color=0x2ca098)
-                    embed.set_author(name=ctx.bot.user, icon_url=ctx.bot.user.display_avatar)
-                    embed.set_thumbnail(url=userForms[i]['Image'])
-                    await ctx.respond(embed=embed)
-                    break
+            if type == None:
+                await ctx.respond('type required when searching by id',ephermal=True)
+            else:
+                for i in userForms:
+                    if i.startswith(type) and i[i.find('#') + 1:] == form:
+                        desc = f"**Owner:** {owner.mention}\n{userForms[i]['Desc']}"
+                        embed=discord.Embed(title=userForms[i]['Name'], url=userForms[i]['Link'], description=desc, color=0x2ca098)
+                        embed.set_author(name=ctx.bot.user, icon_url=ctx.bot.user.display_avatar)
+                        embed.set_thumbnail(url=userForms[i]['Image'])
+                        await ctx.respond(embed=embed,ephemeral=not public)
+                        break
         elif by == 'Name':
             for i in userForms:
                 if userForms[i]['Name'].casefold() == form.casefold():
-                    embed=discord.Embed(title=userForms[i]['Name'], url=userForms[i]['Link'], description=userForms[i]['Desc'], color=0x2ca098)
+                    desc = f"**Owner:** {owner.mention}\n{userForms[i]['Desc']}"
+                    embed=discord.Embed(title=userForms[i]['Name'], url=userForms[i]['Link'], description=desc, color=0x2ca098)
                     embed.set_author(name=ctx.bot.user, icon_url=ctx.bot.user.display_avatar)
                     embed.set_thumbnail(url=userForms[i]['Image'])
-                    await ctx.respond(embed=embed)
+                    await ctx.respond(embed=embed,ephemeral=not public)
+                    break
+                elif list(userForms.keys()).index(i)+1 == len(userForms):
+                    await ctx.respond(f'no form found with selector: {by} and value: {form} from user: {owner}', ephemeral=True)
                     break
         else: await ctx.respond(f'no form found with selector:{by} and value:{form}', ephemeral=True)
     else: await ctx.respond(f'{owner} has no forms', ephemeral=True)
