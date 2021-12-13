@@ -10,6 +10,16 @@ adminRoles = ['helper', 'Moderators', 'Owner']
 guildids= [479493485037355022,472944754397806619]
 
 
+dev = bot.command_group("dev", "Commands for bot development. DO NOT USE unless you know what you are doing.")
+form = bot.command_group('form', "commands to get edit or create forms")
+force = bot.command_group('force', 'commands to edit or create forces.')
+
+def addFieldsToEmbed(dict, embed):
+    for i in dict:
+        if list(dict.keys()).index(i) > 4: 
+            embed.add_field(name=i, value=dict[i], inline=True)
+    return embed
+
 def findGapInIds(dict, type):
     id = f'{type}#1'
     iterable = 1
@@ -65,8 +75,8 @@ def userHasRole(member, role):
 #print(f'system online logged in as {self}')
 
 
-@bot.slash_command(guild_ids=[*guildids])
-async def createform(ctx, 
+@form.command(guild_ids=[*guildids], description='Create a character or gunpla form that people can access')
+async def create(ctx, 
     googledoc: Option(str,"the form link",required=True),
     formtype: Option(str,"type of form",choices=["Gunpla", "Character", "Other"],required=True),
     name: Option(str,"Name for character or gunpla",required=True),
@@ -79,18 +89,17 @@ async def createform(ctx,
         dataBaseKey = str(owner.id) + "'s forms"
         if doesKeyExist(dataBaseKey):
             userForms = db.get(dataBaseKey)
-            gap = findGapInIds(userForms, formtype)
-            userForms[f"{formtype}#{gap}"] = {
+            userForms.append({
                 "Name": name,
                 "Link": googledoc,
                 "Form Type": formtype,
                 "Desc":'',
                 "Image":''
-            }
+            })
             db[dataBaseKey] = userForms
         else:
             newDict = {"Name": name, "Link": googledoc, "Form Type": formtype, "Desc":'','Image':''}
-            db[dataBaseKey] = {f"{formtype}#1": newDict}
+            db[dataBaseKey] = [newDict]
         await ctx.respond(f"{owner}'s {formtype} has been created!")
         print(dataBaseKey)
         print(db[dataBaseKey])
@@ -100,12 +109,11 @@ async def createform(ctx,
         print(owner)
 
 
-@bot.slash_command(guild_ids=[*guildids])
-async def deleteform(
+@form.command(guild_ids=[*guildids],description="delete a gunpla or character")
+async def delete(
     ctx, 
-    by: Option(str,'the selector used to delete the form',choices=['Name', 'Id'],required=True),
-    form: Option(str,'the form you want to delete. ex: \'1\' or \'og gundam\'',required=True),
-    type: Option(str,'the type of form being deleted',choices=["Gunpla", "Character", "Other"],required=True),
+    form: Option(str,'the form you want to get. ex: \'My gundam\' or \'my character\'',required=True),
+    by: Option(str,'the selector used to delete the form',choices=['Name', 'Id'],required=False,default='Name'),
     owner: Option(discord.Member,'the owner of the form. Requires perms to use',required=False,default=None)):
     if owner == None:
         owner = ctx.author
@@ -118,27 +126,25 @@ async def deleteform(
     userForms = db[dataBaseKey]
     if by == 'Id':
         for i in userForms:
-            if i.startswith(type):
-                if i[i.find('#') + 1:] == form:
-                    del userForms[i]
-                    await ctx.respond(f'{type}#{form} deleted by {by}')
-                    break
+            if userForms.index(i) == form:
+                del userForms[form]
+                await ctx.respond(f'{type}#{form} deleted by {by}')
+                break
     elif by == 'Name':
         for i in userForms:
-            if userForms[i]['Name'].casefold() == form.casefold():
-                del userForms[i]
-                await ctx.respond(f'{type}: {form} deleted by {by}')
+            if i['Name'].casefold().startswith(form.casefold()):
+                userForms.remove(i)
+                await ctx.respond(f'{i["Form Type"]}: {form} deleted by {by}')
                 break
 
 
-@bot.slash_command(guild_ids=[*guildids])
+@form.command(guild_ids=[*guildids], description="get someone's character or gunpla")
 async def get(
     ctx, 
     form: Option(str,'the form you want to get. ex: \'My gundam\' or \'my character\'' ,required=True),
-    type: Option(str,'the type of form to get, only required when searching by id',choices=["Gunpla", "Character", "Other"],required=False,default=None),
     owner: Option(discord.Member,'the owner of the form. deafult is command activator',required=False,default=None),
     public: Option(bool, "makes the message only visible to you if false, True by default",required=False, default=True),
-    by: Option(str,'the selector used to get the form',choices=['Name', 'Id'],required=False, default='Name')
+    by: Option(str,'the selector used to get the form, default is by name',choices=['Name', 'Id'],required=False, default='Name')
 ):
     print('command get activated')
     if owner == None:
@@ -147,40 +153,42 @@ async def get(
     if doesKeyExist(dataBaseKey):
         userForms = db.get(dataBaseKey)
         if by == 'Id':
-            if type == None:
-                await ctx.respond('type required when searching by id',ephermal=True)
-            else:
-                for i in userForms:
-                    if i.startswith(type) and i[i.find('#') + 1:] == form:
-                        desc = f"**Owner:** {owner.mention}\n{userForms[i]['Desc']}"
-                        embed=discord.Embed(title=userForms[i]['Name'], url=userForms[i]['Link'], description=desc, color=0x2ca098)
-                        embed.set_author(name=ctx.bot.user, icon_url=ctx.bot.user.display_avatar)
-                        embed.set_thumbnail(url=userForms[i]['Image'])
-                        await ctx.respond(embed=embed,ephemeral=not public)
-                        break
-        elif by == 'Name':
             for i in userForms:
-                if userForms[i]['Name'].casefold() == form.casefold():
-                    desc = f"**Owner:** {owner.mention}\n{userForms[i]['Desc']}"
-                    embed=discord.Embed(title=userForms[i]['Name'], url=userForms[i]['Link'], description=desc, color=0x2ca098)
-                    embed.set_author(name=ctx.bot.user, icon_url=ctx.bot.user.display_avatar)
-                    embed.set_thumbnail(url=userForms[i]['Image'])
+                if userForms.index(i) == form:
+                    desc = i['Desc']
+                    embed=discord.Embed(title=i['Name'], url=i['Link'], description=desc, color=0x2ca098)
+                    embed.set_author(name=f"{owner}'s", icon_url=owner.display_avatar)
+                    embed.set_thumbnail(url=i['Image'])
+                    embed.set_footer(text=f"id: {userForms.index(i)}")
+                    embed = addFieldsToEmbed(i, embed)
                     await ctx.respond(embed=embed,ephemeral=not public)
                     break
-                elif list(userForms.keys()).index(i)+1 == len(userForms):
+                else:
+                    await ctx.respond(f'no form found with id:{form}')
+        elif by == 'Name':
+            for i in userForms:
+                if i['Name'].casefold().startswith(form.casefold()):
+                    desc = i['Desc']
+                    embed=discord.Embed(title=i['Name'], url=i['Link'], description=desc, color=0x2ca098)
+                    embed.set_author(name=f"{owner}'s", icon_url=owner.display_avatar)
+                    embed.set_thumbnail(url=i['Image'])
+                    embed.set_footer(text=f"id: {userForms.index(i)}")
+                    embed = addFieldsToEmbed(i, embed)
+                    await ctx.respond(embed=embed,ephemeral=not public)
+                    break
+                elif userForms.index(i)+1 == len(userForms):
                     await ctx.respond(f'no form found with selector: {by} and value: {form} from user: {owner}', ephemeral=True)
                     break
         else: await ctx.respond(f'no form found with selector:{by} and value:{form}', ephemeral=True)
     else: await ctx.respond(f'{owner} has no forms', ephemeral=True)
 
-@bot.slash_command(guild_ids=[*guildids])
-async def editform(
+@form.command(guild_ids=[*guildids],description="edit the data of a form")
+async def edit(
     ctx, 
-    by: Option(str,'the selector used to get the form',choices=['Name', 'Id'],required=True),
     form: Option(str,'the form you want to get. ex: \'1\' or \'og gundam\'',required=True),
-    type: Option(str,'the type of form to get',choices=["Gunpla", "Character", "Other"],required=True),
-    inputfield: Option(str,'the field you want to edit', choices=["Name","Link","Desc",'Image'],required=True),
+    inputfield: Option(str,'the field you want to edit', choices=["Name","Link","Desc","Image","Type"],required=True),
     inputdata: Option(str,'the data you want to set the input field to', required=True),
+    by: Option(str,'the selector used to get the form',choices=['Name', 'Id'],required=False,default='Name'),
     owner: Option(discord.Member,'the owner of the form. deafult is command activator',required=False,default=None)
 ):
     if owner == None:
@@ -194,28 +202,100 @@ async def editform(
     userForms = db[dataBaseKey]
     if by == 'Id':
         for i in userForms:
-            if i.startswith(type) and i[i.find('#') + 1:] == form:
-                userForms[i][inputfield] = inputdata
-                await ctx.respond(f'{inputfield} changed to {inputdata} on {i}',ephemeral=True)
+            if userForms.index(i) == form:
+                index= userForms.index(i)
+                userForms[index][inputfield] = inputdata
+                await ctx.respond(f'{inputfield} changed to {inputdata} on id: {userForms.index(i)}',ephemeral=True)
                 break
     elif by == 'Name':
         for i in userForms:
-            if userForms[i]['Name'].casefold() == form.casefold():
-                userForms[i][inputfield] = inputdata
-                await ctx.respond(f'{inputfield} changed to {inputdata} on {userForms[i]["Name"]}',ephemeral=True)
+            if i['Name'].casefold().startswith(form.casefold()):
+                index= userForms.index(i)
+                userForms[index][inputfield] = inputdata
+                await ctx.respond(f'{inputfield} changed to {inputdata} on {i["Name"]}',ephemeral=True)
                 break
 
-@bot.slash_command(guild_ids=[*guildids])
+@form.command(guild_ids=[*guildids])
+async def addfield(ctx,
+    fieldname: Option(str, 'the name of the field',required=True),
+    fielddata: Option(str, 'the data for the field',required=True),
+    form: Option(str, "the form to add the field to",required=True),
+    owner: Option(discord.Member, "the owner of the form requires perms", required=False,default=None),
+    by: Option(str,"what to search by", choices=["Name", 'Id'], required=False, default='Name')
+):
+    if owner == None:
+        owner = ctx.author
+    elif userHasRole(ctx.author, adminRoles) != True:
+        ctx.respond(
+            "You do not have permission to edit someone else's forms.",
+            ephemeral=True)
+        return
+    dataBaseKey = str(owner.id) + "'s forms"
+    userForms = db[dataBaseKey]
+    if by == 'Name':
+        for i in userForms:
+            if i['Name'].casefold().startswith(form.casefold()):
+                index=userForms.index(i)
+                userForms[index][fieldname] = fielddata
+                await ctx.respond(f'{fielddata} added to {fieldname} in {i["Name"]}',ephemeral=True)
+                break
+    elif by == 'Id':
+        for i in userForms:
+            if userForms.index(i) == form:
+                index=userForms.index(i)
+                userForms[index][fieldname] = fielddata
+                await ctx.respond(f'{fielddata} added to {fieldname} in {i["Name"]}',ephemeral=True)
+                break
+
+@form.command(guild_ids=[*guildids])
+async def removefield(ctx,
+    fieldname: Option(str, 'the name of the field',required=True),
+    form: Option(str, "the form to add the field to",required=True),
+    owner: Option(discord.Member, "the owner of the form requires perms", required=False,default=None),
+    by: Option(str,"what to search by", choices=["Name", 'Id'], required=False, default='Name')
+):
+    if owner == None:
+        owner = ctx.author
+    elif userHasRole(ctx.author, adminRoles) != True:
+        ctx.respond(
+            "You do not have permission to edit someone else's forms.",
+            ephemeral=True)
+        return
+    dataBaseKey = str(owner.id) + "'s forms"
+    userForms = db[dataBaseKey]
+    if by == 'Name':
+        for i in userForms:
+            if i['Name'].casefold().startswith(form.casefold()):
+                index=userForms.index(i)
+                del userForms[index][fieldname]
+                await ctx.respond(f"field {fieldname} removed from {form}")
+                break
+    elif by == 'Id':
+        for i in userForms:
+            if userForms.index(i) == form:
+                index=userForms.index(i)
+                del userForms[index][fieldname]
+                await ctx.respond(f"field {fieldname} removed from {form}")
+                break
+
+@dev.command(guild_ids=[*guildids])
 @permissions.has_any_role(*adminRoles)
 async def delkey(ctx, owner: Option(discord.Member,'the users forms to delete')):
     dataBaseKey = str(owner.id) + "'s forms"
     del db[dataBaseKey]
     await ctx.respond('key has been deleted', ephemeral=True)
-@bot.slash_command(guild_ids=[*guildids])
+@dev.command(guild_ids=[*guildids])
 @permissions.has_any_role(*adminRoles)
 async def getkey(ctx, owner: Option(discord.Member,'the users forms to delete')):
     dataBaseKey = str(owner.id) + "'s forms"
     await ctx.respond(str(db[dataBaseKey]), ephemeral=True)
+@dev.command(guild_ids=[*guildids])
+@permissions.has_any_role(*adminRoles)
+async def updatekey(ctx, owner: Option(discord.Member,'the users forms to update')):
+    dataBaseKey = str(owner.id) + "'s forms"
+    userForms = db[dataBaseKey]
+    db[dataBaseKey] = list(userForms.values())
+    await ctx.respond('key should be converted', ephemeral=True)
 
 
 bot.run(token)
