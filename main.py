@@ -1,6 +1,6 @@
 import keepalive
 import discord
-from discord.commands import Option, permissions
+from discord.commands import Option, permissions, SlashCommandGroup
 import os
 from replit import db
 keepalive.keep_alive()
@@ -10,9 +10,19 @@ adminRoles = ['helper', 'Moderators', 'Owner']
 guildids= [479493485037355022,472944754397806619]
 
 
-dev = bot.command_group("dev", "Commands for bot development. DO NOT USE unless you know what you are doing.")
-form = bot.command_group('form', "commands to get edit or create forms")
-force = bot.command_group('force', 'commands to edit or create forces.')
+
+dev = SlashCommandGroup("dev", "Commands for bot development. DO NOT USE unless you know what you are doing.",
+    permissions=[
+               permissions.CommandPermission("Owner", 1, True
+            )
+        ])
+form = SlashCommandGroup('form', "commands to get edit or create forms")
+force = SlashCommandGroup('force', 'commands to edit or create forces.', 
+    permissions=[
+            permissions.CommandPermission(
+                "Owner", 1, True
+            )
+        ])
 
 def addFieldsToEmbed(dict, embed):
     for i in dict:
@@ -50,6 +60,12 @@ def validGoogleDoc(input):
     else:
         return False
 
+def validDiscordLink(input):
+    link = "https://discord.com/"
+    if (input.startswith(link)):
+        return True
+    else:
+        return False
 
 def doesKeyExist(key):
     if db.prefix(key): return True
@@ -77,13 +93,13 @@ def userHasRole(member, role):
 
 @form.command(guild_ids=[*guildids], description='Create a character or gunpla form that people can access')
 async def create(ctx, 
-    googledoc: Option(str,"the form link",required=True),
+    googledoc: Option(str,"the form link, or discord message link",required=True),
     formtype: Option(str,"type of form",choices=["Gunpla", "Character", "Other"],required=True),
     name: Option(str,"Name for character or gunpla",required=True),
     owner: Option(discord.Member,"The owner of the form",required=False)
 ):
     print('command createform activated')
-    if (validGoogleDoc(googledoc)):
+    if validGoogleDoc(googledoc) or validDiscordLink(googledoc):
         if owner == None:
             owner = ctx.author
         dataBaseKey = str(owner.id) + "'s forms"
@@ -279,23 +295,25 @@ async def removefield(ctx,
                 break
 
 @dev.command(guild_ids=[*guildids])
-@permissions.has_any_role(*adminRoles)
 async def delkey(ctx, owner: Option(discord.Member,'the users forms to delete')):
     dataBaseKey = str(owner.id) + "'s forms"
     del db[dataBaseKey]
     await ctx.respond('key has been deleted', ephemeral=True)
 @dev.command(guild_ids=[*guildids])
-@permissions.has_any_role(*adminRoles)
 async def getkey(ctx, owner: Option(discord.Member,'the users forms to delete')):
     dataBaseKey = str(owner.id) + "'s forms"
     await ctx.respond(str(db[dataBaseKey]), ephemeral=True)
 @dev.command(guild_ids=[*guildids])
-@permissions.has_any_role(*adminRoles)
 async def updatekey(ctx, owner: Option(discord.Member,'the users forms to update')):
     dataBaseKey = str(owner.id) + "'s forms"
     userForms = db[dataBaseKey]
     db[dataBaseKey] = list(userForms.values())
     await ctx.respond('key should be converted', ephemeral=True)
+
+
+bot.add_application_command(form)
+bot.add_application_command(dev)
+bot.add_application_command(force)
 
 
 bot.run(token)
