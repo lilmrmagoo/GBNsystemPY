@@ -1,12 +1,19 @@
-class Example(commands.Cog):
+import discord
+from discord.commands import CommandPermission, SlashCommandGroup
+from discord.ext import commands
+
+class ForceCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @slash_command(guild_ids=[...])  # Create a slash command for the supplied guilds.
-    async def hello(self, ctx):
-        await ctx.respond("Hi, this is a slash command from a cog!")
+    force = SlashCommandGroup('force', 'commands to edit or create forces.', 
+        permissions=[
+                CommandPermission(
+                    "Owner", 2, True
+                )
+            ])
 
-    @slash_command()  # Not passing in guild_ids creates a global slash command (might take an hour to register).
-    async def hi(self, ctx):
-        await ctx.respond("Hi, this is a global slash command from a cog!")
+    @force.command()
+    async def hello(self, ctx):
+        await ctx.respond("Hello, this is a slash subcommand from a cog!")
 
