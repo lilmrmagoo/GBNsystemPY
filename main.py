@@ -1,19 +1,29 @@
-impleimport keepalive
+import keepalive
 import discord
 from discord.commands import Option, permissions, SlashCommandGroup, slash_command
 from discord.ext import commands
 import os
 from replit import db
 from force_commands import ForceCommands
+from shared import guildIds, adminRoles, validation
 keepalive.keep_alive()
 bot = discord.Bot()
 token = os.environ['TOKEN']
-adminRoles = ['helper', 'Moderators', 'Owner']
-guildids= [479493485037355022,472944754397806619]
+guildids = guildIds
 
 
 
-
+def setup(bot):
+    bot.add_cog(FormAndDev(bot), override=True)
+    bot.add_cog(ForceCommands(bot), override=True)
+    cog = bot.get_cog('FormAndDev')
+    cog2 = bot.get_cog('ForceCommands')
+    commands = cog.get_commands()
+    commands2 = cog2.get_commands()
+    print([c.name for c in commands])
+    print([c.qualified_name for c in cog.walk_commands()])
+    print([c.name for c in commands2])
+    print([c.qualified_name for c in cog2.walk_commands()])
 def addFieldsToEmbed(dict, embed):
     for i in dict:
         if list(dict.keys()).index(i) > 4: 
@@ -41,25 +51,6 @@ def countKeysWith(dict, type):
         if i.startswith(type):
             count += 1
     return count
-
-
-def validGoogleDoc(input):
-    link = "https://docs.google.com/"
-    if (input.startswith(link)):
-        return True
-    else:
-        return False
-
-def validDiscordLink(input):
-    link = "https://discord.com/"
-    if (input.startswith(link)):
-        return True
-    else:
-        return False
-
-def doesKeyExist(key):
-    if db.prefix(key): return True
-    else: return False
 
 
 def userHasRole(member, role):
@@ -105,11 +96,11 @@ class FormAndDev(commands.Cog):
         owner: Option(discord.Member,"The owner of the form",required=False)
     ):
         print('command createform activated')
-        if validGoogleDoc(googledoc) or validDiscordLink(googledoc):
+        if validation.validGoogleDoc(googledoc) or validation.validDiscordLink(googledoc):
             if owner == None:
                 owner = ctx.author
             dataBaseKey = str(owner.id) + "'s forms"
-            if doesKeyExist(dataBaseKey):
+            if validation.doesKeyExist(dataBaseKey):
                 userForms = db.get(dataBaseKey)
                 userForms.append({
                     "Name": name,
@@ -172,7 +163,7 @@ class FormAndDev(commands.Cog):
         if owner == None:
             owner = ctx.author  
         dataBaseKey = str(owner.id) + "'s forms"
-        if doesKeyExist(dataBaseKey):
+        if validation.doesKeyExist(dataBaseKey):
             userForms = db.get(dataBaseKey)
             if by == 'Id':
                 for i in userForms:
@@ -319,11 +310,15 @@ class FormAndDev(commands.Cog):
     async def allusers(self, ctx):
         users = db.keys()
         await ctx.respond(users, ephemeral=True)
+    @dev.command(guild_ids=[*guildids])
+    async def newtest(self, ctx):
+        await ctx.respond('test worked', ephemeral=True)
 
 #bot.add_application_command(form)
 #bot.add_application_command(dev)
 #bot.add_application_command(force)
-bot.add_cog(FormAndDev(bot))
-bot.add_cog(ForceCommands(bot))
+print(type(guildids))
+
+setup(bot)
 
 bot.run(token)
