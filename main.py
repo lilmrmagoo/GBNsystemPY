@@ -1,6 +1,6 @@
-impleimport keepalive
+import keepalive
 import discord
-from discord.commands import Option, permissions, SlashCommandGroup, slash_command
+from discord.commands import Option, permissions, SlashCommandGroup
 from discord.ext import commands
 import os
 from replit import db
@@ -12,7 +12,9 @@ adminRoles = ['helper', 'Moderators', 'Owner']
 guildids= [479493485037355022,472944754397806619]
 
 
-
+def setup(bot):
+    bot.add_cog(FormAndDev(bot), override=True)
+    bot.add_cog(ForceCommands(bot), override=True)
 
 def addFieldsToEmbed(dict, embed):
     for i in dict:
@@ -316,14 +318,13 @@ class FormAndDev(commands.Cog):
         db[dataBaseKey] = list(userForms.values())
         await ctx.respond('key should be converted', ephemeral=True)
     @dev.command(guild_ids=[*guildids])
-    async def allusers(self, ctx):
+    async def allusersofforms(self, ctx):
         users = db.keys()
         await ctx.respond(users, ephemeral=True)
 
 #bot.add_application_command(form)
 #bot.add_application_command(dev)
 #bot.add_application_command(force)
-bot.add_cog(FormAndDev(bot))
-bot.add_cog(ForceCommands(bot))
+setup(bot)
 
 bot.run(token)

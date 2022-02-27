@@ -13,7 +13,7 @@ class ForceCommands(commands.Cog):
                 )
             ])
 
-    @force.command()
+    @force.command(guild_ids=[479493485037355022,472944754397806619])
     async def hello(self, ctx):
         await ctx.respond("Hello, this is a slash subcommand from a cog!")
 
