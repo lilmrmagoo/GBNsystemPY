@@ -24,7 +24,7 @@ class ForceCommands(commands.Cog):
         name: Option(str,"the name of the force", required=True),
         colour: Option(str, "the colour associated with the force in hexademical form ex: ffffff would be white"),
         googledoc: Option(str, "the link to the forces google doc"),
-        leader: Option(discord.member, "The leader of the force")
+        leader: Option(discord.Member, "the leader of the force leave blank if it is you", required=False,default=None)
     ):
         if leader == None:
             leader = ctx.author
@@ -40,11 +40,13 @@ class ForceCommands(commands.Cog):
                 "Link": googledoc,
                 "Leader": leader.id,
                 "Ranking": 0,
+                "Members": 1,
                 "Desc": " ",
                 "Image": " "
                 
             })
             db["Forces"] = Forces
+            await ctx.guild.add_role()
         else:
             newForce = {
                 "Name": name,
@@ -52,6 +54,7 @@ class ForceCommands(commands.Cog):
                 "Link": googledoc,
                 "Leader": leader.id,
                 "Ranking": 0,
+                "Members": 1,
                 "Desc": " ",
                 "Image": " "
                 

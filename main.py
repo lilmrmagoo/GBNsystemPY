@@ -312,7 +312,8 @@ class FormAndDev(commands.Cog):
         await ctx.respond(users, ephemeral=True)
     @dev.command(guild_ids=[*guildids])
     async def newtest(self, ctx):
-        await ctx.respond('test worked', ephemeral=True)
+        guild = ctx.guild
+        await ctx.respond(f'test worked, guild: {guild}', ephemeral=True)
 
 #bot.add_application_command(form)
 #bot.add_application_command(dev)
