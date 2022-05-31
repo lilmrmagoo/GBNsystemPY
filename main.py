@@ -1,6 +1,6 @@
 import keepalive
 import discord
-from discord.commands import Option, permissions, SlashCommandGroup
+from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
 import os
 from replit import db
@@ -84,11 +84,7 @@ def userHasRole(member, role):
 class FormAndDev(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-    dev = SlashCommandGroup("dev", "Commands for bot development. DO NOT USE unless you know what you are doing.",
-        permissions=[
-                   permissions.CommandPermission("Owner", 1, True
-                )
-            ])
+    dev = SlashCommandGroup("dev", "Commands for bot development. DO NOT USE unless you know what you are doing.")
     form = SlashCommandGroup('form', "commands to get edit or create forms")
     #force = SlashCommandGroup('force', 'commands to edit or create forces.', 
 #        permissions=[
@@ -187,8 +183,9 @@ class FormAndDev(commands.Cog):
                         embed = addFieldsToEmbed(i, embed)
                         await ctx.respond(embed=embed,ephemeral=not public)
                         break
-                    else:
-                        await ctx.respond(f'no form found with id:{form}')
+                    elif userForms.index(i)+1 == len(userForms):
+                        await ctx.respond(f'no form found with selector: {by} and value: {form} from user: {owner}', ephemeral=True)
+                        break
             elif by == 'Name':
                 for i in userForms:
                     if i['Name'].casefold().startswith(form.casefold()):
