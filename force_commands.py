@@ -1,5 +1,5 @@
 import discord
-from discord.commands import permissions, SlashCommandGroup, Option
+from discord.commands import SlashCommandGroup, Option, CommandPermission
 from discord.ext import commands
 from replit import db
 from shared import guildIds, validation, conversion
@@ -9,16 +9,8 @@ class ForceCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    PermID = "Owner"
-    PermTYPE = 1
-    force = SlashCommandGroup('force', 'commands to edit or create forces.'#, 
-        #permissions=[
-                   #permissions.CommandPermission(id=PermID, type=PermTYPE, permission=True)]
-    )
+    force = SlashCommandGroup('force', 'commands to edit or create forces.', permissions=[CommandPermission("owner", 2, True)],)
 
-    @force.command(guild_ids=[*guildids], description='a test command')
-    async def hellotester(self, ctx):
-        await ctx.respond("Hello, this is a slash subcommand from a cog!")
     @force.command(guild_ids=[*guildids], description='Create a Force')
     async def create(self, ctx,
         name: Option(str,"the name of the force", required=True),

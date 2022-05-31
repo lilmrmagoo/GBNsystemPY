@@ -1,10 +1,11 @@
 import keepalive
 import discord
-from discord.commands import Option, permissions, SlashCommandGroup, slash_command
+from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
 import os
 from replit import db
 from force_commands import ForceCommands
+from form_commands import FormCommands
 from shared import guildIds, adminRoles, validation
 keepalive.keep_alive()
 bot = discord.Bot()
@@ -15,15 +16,10 @@ guildids = guildIds
 
 def setup(bot):
     bot.add_cog(FormAndDev(bot), override=True)
+    bot.add_cog(FormCommands(bot), override=True)
     bot.add_cog(ForceCommands(bot), override=True)
-    cog = bot.get_cog('FormAndDev')
-    cog2 = bot.get_cog('ForceCommands')
-    commands = cog.get_commands()
-    commands2 = cog2.get_commands()
-    print([c.name for c in commands])
-    print([c.qualified_name for c in cog.walk_commands()])
-    print([c.name for c in commands2])
-    print([c.qualified_name for c in cog2.walk_commands()])
+
+
 def addFieldsToEmbed(dict, embed):
     for i in dict:
         if list(dict.keys()).index(i) > 4: 
@@ -73,11 +69,7 @@ def userHasRole(member, role):
 class FormAndDev(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-    dev = SlashCommandGroup("dev", "Commands for bot development. DO NOT USE unless you know what you are doing.",
-        permissions=[
-                   permissions.CommandPermission("Owner", 1, True
-                )
-            ])
+    dev = SlashCommandGroup("dev", "Commands for bot development. DO NOT USE unless you know what you are doing.",)
     form = SlashCommandGroup('form', "commands to get edit or create forms")
     #force = SlashCommandGroup('force', 'commands to edit or create forces.', 
 #        permissions=[
@@ -176,8 +168,9 @@ class FormAndDev(commands.Cog):
                         embed = addFieldsToEmbed(i, embed)
                         await ctx.respond(embed=embed,ephemeral=not public)
                         break
-                    else:
-                        await ctx.respond(f'no form found with id:{form}')
+                    elif userForms.index(i)+1 == len(userForms):
+                        await ctx.respond(f'no form found with selector: {by} and value: {form} from user: {owner}', ephemeral=True)
+                        break
             elif by == 'Name':
                 for i in userForms:
                     if i['Name'].casefold().startswith(form.casefold()):
@@ -318,7 +311,6 @@ class FormAndDev(commands.Cog):
 #bot.add_application_command(form)
 #bot.add_application_command(dev)
 #bot.add_application_command(force)
-print(type(guildids))
 
 setup(bot)
 
