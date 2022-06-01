@@ -33,6 +33,23 @@ class validation():
     def doesKeyExist(key):
         if db.prefix(key): return True
         else: return False
+    def userHasRole(member, role):
+        membersRoles = member.roles
+        if isinstance(role, str):
+            if (membersRoles.count(role) > 0):
+                return True
+            else:
+                return False
+        elif isinstance(role, list):
+            for i in role:
+                if (membersRoles.count(i) > 0):
+                    return True
+            return False
+    def addFieldsToEmbed(dict, embed):
+        for i in dict:
+            if list(dict.keys()).index(i) > 4: 
+                embed.add_field(name=i, value=dict[i], inline=True)
+        return embed
 class conversion():
     def hexToRGB(hex):
         hex = hex.lstrip('#')

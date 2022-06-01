@@ -45,7 +45,7 @@ class FormCommands(commands.Cog):
             print(owner)
     
     
-    @form.command(guild_ids=[*guildids],description="delete a gunpla or character")
+    @form.command(guild_ids=[*guildids], description="delete a gunpla or character")
     async def delete(
         self, ctx, 
         form: Option(str,'the form you want to get. ex: \'My gundam\' or \'my character\'',required=True),
@@ -53,7 +53,7 @@ class FormCommands(commands.Cog):
         owner: Option(discord.Member,'the owner of the form. Requires perms to use',required=False,default=None)):
         if owner == None:
             owner = ctx.author
-        elif userHasRole(ctx.author, adminRoles) != True:
+        elif validation.userHasRole(ctx.author, adminRoles) != True:
             ctx.respond(
                 "You do not have permission to delete someone else's forms.",
                 ephemeral=True)
@@ -96,7 +96,7 @@ class FormCommands(commands.Cog):
                         embed.set_author(name=f"{owner}'s", icon_url=owner.display_avatar)
                         embed.set_thumbnail(url=i['Image'])
                         embed.set_footer(text=f"id: {userForms.index(i)}")
-                        embed = addFieldsToEmbed(i, embed)
+                        embed = validation.addFieldsToEmbed(i, embed)
                         await ctx.respond(embed=embed,ephemeral=not public)
                         break
                     elif userForms.index(i)+1 == len(userForms):
@@ -109,8 +109,7 @@ class FormCommands(commands.Cog):
                         embed=discord.Embed(title=i['Name'], url=i['Link'], description=desc, color=0x2ca098)
                         embed.set_author(name=f"{owner}'s", icon_url=owner.display_avatar)
                         embed.set_thumbnail(url=i['Image'])
-                        embed.set_footer(text=f"id: {userForms.index(i)}")
-                        embed = addFieldsToEmbed(i, embed)
+                        embed = validation.addFieldsToEmbed(i, embed)
                         await ctx.respond(embed=embed,ephemeral=not public)
                         break
                     elif userForms.index(i)+1 == len(userForms):
@@ -119,10 +118,10 @@ class FormCommands(commands.Cog):
             else: await ctx.respond(f'no form found with selector:{by} and value:{form}', ephemeral=True)
         else: await ctx.respond(f'{owner} has no forms', ephemeral=True)
     
-    @form.command(guild_ids=[*guildids],description="edit the data of a form")
+    @form.command(guild_ids=[*guildids], description="edit the data of a form")
     async def edit(
-        ctx, 
-        form: Option(str,'the form you want to get. ex: \'1\' or \'og gundam\'',required=True),
+        self, ctx, 
+        form: Option(str,'the form you want to get. ex: \'My gundam\' or \'my character\'' ,required=True),        
         inputfield: Option(str,'the field you want to edit', choices=["Name","Link","Desc","Image","Type"],required=True),
         inputdata: Option(str,'the data you want to set the input field to', required=True),
         by: Option(str,'the selector used to get the form',choices=['Name', 'Id'],required=False,default='Name'),
@@ -130,7 +129,7 @@ class FormCommands(commands.Cog):
     ):
         if owner == None:
             owner = ctx.author
-        elif userHasRole(ctx.author, adminRoles) != True:
+        elif validation.userHasRole(ctx.author, adminRoles) != True:
             ctx.respond(
                 "You do not have permission to edit someone else's forms.",
                 ephemeral=True)
@@ -162,7 +161,7 @@ class FormCommands(commands.Cog):
     ):
         if owner == None:
             owner = ctx.author
-        elif userHasRole(ctx.author, adminRoles) != True:
+        elif validation.userHasRole(ctx.author, adminRoles) != True:
             ctx.respond(
                 "You do not have permission to edit someone else's forms.",
                 ephemeral=True)
@@ -193,7 +192,7 @@ class FormCommands(commands.Cog):
     ):
         if owner == None:
             owner = ctx.author
-        elif userHasRole(ctx.author, adminRoles) != True:
+        elif validation.userHasRole(ctx.author, adminRoles) != True:
             ctx.respond(
                 "You do not have permission to edit someone else's forms.",
                 ephemeral=True)

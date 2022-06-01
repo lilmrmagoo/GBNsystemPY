@@ -1,5 +1,5 @@
 import discord
-from discord.commands import SlashCommandGroup, Option, CommandPermission
+from discord.commands import SlashCommandGroup, Option
 from discord.ext import commands
 from replit import db
 from shared import guildIds, validation, conversion
@@ -9,7 +9,7 @@ class ForceCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    force = SlashCommandGroup('force', 'commands to edit or create forces.', permissions=[CommandPermission("owner", 2, True)],)
+    force = SlashCommandGroup('force', 'commands to edit or create forces.', default_member_permissions=discord.Permissions(administrator=True))
 
     @force.command(guild_ids=[*guildids], description='Create a Force')
     async def create(self, ctx,
