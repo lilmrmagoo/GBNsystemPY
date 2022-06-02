@@ -177,7 +177,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "py-cord"
-version = "2.0.0b4"
+version = "2.0.0rc1"
 description = "A Python wrapper for the Discord API"
 category = "main"
 optional = false
