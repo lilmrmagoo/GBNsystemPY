@@ -213,3 +213,33 @@ class FormCommands(commands.Cog):
                     del userForms[index][fieldname]
                     await ctx.respond(f"field {fieldname} removed from {form}")
                     break
+    @form.command(guild_ids=[*guildids], description="find a character or gunpla")
+    async def search(
+        self, ctx, 
+        form: Option(str,'the form you want to get. ex: \'My gundam\' or \'my character\'' ,required=True),
+        public: Option(bool, "makes the message only visible to you if false, True by default",required=False, default=True)
+    ):
+        print(f'searching in guild {ctx.guild}...')
+        
+        searchComplete = False
+        keys = db.keys()
+        for j in keys:
+            if j.endswith('forms'):
+                userForms = db.get(j)
+                guild = ctx.guild
+                memberid = j[0:-8]
+                owner = await guild.fetch_member(memberid)
+                for i in userForms:
+                    if i['Name'].casefold().startswith(form.casefold()):
+                        searchComplete = True                        
+                        desc = i['Desc']
+                        embed=discord.Embed(title=i['Name'], url=i['Link'], description=desc, color=0x2ca098)
+                        embed.set_author(name=f"{owner}'s", icon_url=owner.display_avatar)
+                        embed.set_thumbnail(url=i['Image'])
+                        embed = validation.addFieldsToEmbed(i, embed)
+                        await ctx.respond(embed=embed,ephemeral=not public)
+                        break
+                if searchComplete:
+                    break
+        if not searchComplete:
+            await ctx.respond(f'no form found with name {form}', ephemeral=not public)
