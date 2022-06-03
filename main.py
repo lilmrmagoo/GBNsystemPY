@@ -15,7 +15,7 @@ guildids = guildIds
 
 
 def setup(bot):
-    bot.add_cog(FormAndDev(bot), override=True)
+    bot.add_cog(Dev(bot), override=True)
     bot.add_cog(FormCommands(bot), override=True)
     bot.add_cog(ForceCommands(bot), override=True)
 
@@ -49,15 +49,19 @@ def countKeysWith(dict, type):
 #@bot.on_ready()
 #async def on_ready(self):
 #print(f'system online logged in as {self}')
-class FormAndDev(commands.Cog):
+class Dev(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     dev = SlashCommandGroup("dev", "Commands for bot development. DO NOT USE", default_member_permissions=discord.Permissions(administrator=True))
     @dev.command(guild_ids=[*guildids])
-    async def delkey(self, ctx, owner: Option(discord.Member,'the users forms to delete')):
-        dataBaseKey = str(owner.id) + "'s forms"
-        del db[dataBaseKey]
+    async def delkey(self, ctx, key: Option(str,'the users forms to delete')):
+        del db[key]
         await ctx.respond('key has been deleted', ephemeral=True)
+    @dev.command(guild_ids=[*guildids])
+    async def clearuser(self, ctx, user: Option(discord.Member,'the users forms to delete')):
+        dataBaseKey = str(user.id) + "'s forms"
+        del db[dataBaseKey]
+        await ctx.respond('user has been cleared', ephemeral=True)
     @dev.command(guild_ids=[*guildids])
     async def getkey(self, ctx, owner: Option(discord.Member,'returns all a users values under their form key')):
         dataBaseKey = str(owner.id) + "'s forms"

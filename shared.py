@@ -23,7 +23,7 @@ class validation():
         except:
             return False
         input = input.lstrip('#')
-        if (input.length == 6):
+        if (len(input) == 6):
             for letter in input.casefold():
                 if letter not in hexdigits:
                     return False
@@ -46,8 +46,9 @@ class validation():
                     return True
             return False
     def addFieldsToEmbed(dict, embed):
+        defualtFields = ['Name', 'Desc','Link','Owner','Leader','Image','Colour','Ranking','Form Type','Members']
         for i in dict:
-            if list(dict.keys()).index(i) > 4: 
+            if i not in defualtFields: 
                 embed.add_field(name=i, value=dict[i], inline=True)
         return embed
 class conversion():

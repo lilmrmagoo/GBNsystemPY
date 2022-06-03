@@ -28,28 +28,56 @@ class ForceCommands(commands.Cog):
             Forces = db["Forces"] 
             Forces.append({
                 "Name": name,
-                "Colour": conversion.hexToRGB(colour),
                 "Link": googledoc,
                 "Leader": leader.id,
-                "Ranking": 0,
-                "Members": 1,
                 "Desc": " ",
-                "Image": " "
+                "Image": " ",
+                "Colour": colour,
+                "Ranking": 0,
+                "Members": 1
                 
             })
             db["Forces"] = Forces
-            await ctx.guild.add_role()
+            role = await ctx.guild.create_role(name=name, color=int(colour,16),reason="new force role")
+            await leader.add_roles(role)
+            await ctx.respond(f"{name} has been created!")
+            
         else:
             newForce = {
                 "Name": name,
-                "Colour": conversion.hexToRGB(colour),
                 "Link": googledoc,
                 "Leader": leader.id,
-                "Ranking": 0,
-                "Members": 1,
                 "Desc": " ",
-                "Image": " "
+                "Image": " ",
+                "Colour": colour,
+                "Ranking": 0,
+                "Members": 1
                 
             }
             db["Forces"] = [newForce]
-        await ctx.respond(f"{name} has been created!")
+            role = await ctx.guild.create_role(name=name, color=int(colour,16),reason="new force role")
+            await leader.add_roles(role)
+            await ctx.respond(f"{name} has been created!")
+
+    @force.command(guild_ids=[*guildids], description="get the info for a force")
+    async def get(
+        self, ctx, 
+        force: Option(str,'the force you want to get. ex: \'build divers\' or \'pizza grubbers\'' ,required=True),
+        public: Option(bool, "makes the message only visible to you if false, True by default",required=False, default=True)
+    ):
+        if validation.doesKeyExist("Forces"):
+            forces = db["Forces"]
+            for i in forces:
+                if i['Name'].casefold().startswith(force.casefold()):
+                    owner = await ctx.guild.fetch_member(i['Leader'])
+                    desc = i['Desc']
+                    embed=discord.Embed(title=i['Name'], url=i['Link'], description=desc, color=0x2ca098)
+                    embed.add_field(name='Leader', value=owner, inline=True)
+                    embed.add_field(name='Member Count', value=i['Members'], inline=True)
+                    embed.set_thumbnail(url=i['Image'])
+                    embed = validation.addFieldsToEmbed(i, embed)
+                    await ctx.respond(embed=embed,ephemeral=not public)
+                    break
+                elif forces.index(i)+1 == len(forces):
+                    await ctx.respond(f'no force found with the name: {force}', ephemeral=True)
+                    break
