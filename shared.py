@@ -33,20 +33,15 @@ class validation():
     def doesKeyExist(key):
         if db.prefix(key): return True
         else: return False
-    def userHasRole(member, role):
+    def userHasRole(member, roles):
+        hasRole = False
         membersRoles = member.roles
-        if isinstance(role, str):
-            if (membersRoles.count(role) > 0):
-                return True
-            else:
-                return False
-        elif isinstance(role, list):
-            for i in role:
-                if (membersRoles.count(i) > 0):
-                    return True
-            return False
+        for i in membersRoles:
+            if i.name in roles:
+                hasRole = True
+        return hasRole
     def addFieldsToEmbed(dict, embed):
-        defualtFields = ['Name', 'Desc','Link','Owner','Leader','Image','Colour','Ranking','Form Type','Members']
+        defualtFields = ['Name', 'Desc','Link','Owner','Leader','Image','Colour','Ranking','Form Type','Members','RoleID']
         for i in dict:
             if i not in defualtFields: 
                 embed.add_field(name=i, value=dict[i], inline=True)

@@ -1,0 +1,7 @@
+add force edit command
+add force delete command (check if user is leader or mod)
+add force join command
+
+add force member sub command group
+add force member add command (name and role args)
+add force member remove command
