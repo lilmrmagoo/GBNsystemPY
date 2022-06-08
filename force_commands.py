@@ -46,7 +46,7 @@ class ForceCommands(commands.Cog):
                     "Image": " ",
                     "Colour": colour.strip('#'),
                     "Ranking": 0,
-                    "Members": 1,
+                    "MemberCount": 1,
                     "RoleID": 0
                     
                 }
@@ -66,7 +66,7 @@ class ForceCommands(commands.Cog):
                 "Image": " ",
                 "Colour": colour.strip('#'),
                 "Ranking": 0,
-                "Members": 1,
+                "MemberCount": 1,
                 "RoleID": 0
             }
 
@@ -84,23 +84,22 @@ class ForceCommands(commands.Cog):
     ):
         if validation.doesKeyExist("Forces"):
             forces = db["Forces"]
+            forceFound = False
             for i in forces:
                 if i['Name'].casefold().startswith(force.casefold()):
                     owner = await ctx.guild.fetch_member(i['Leader'])
                     desc = i['Desc']
                     embed=discord.Embed(title=i['Name'], url=i['Link'], description=desc, color=0x2ca098)
                     embed.add_field(name='Leader', value=owner, inline=True)
-                    embed.add_field(name='Member Count', value=i['Members'], inline=True)
+                    embed.add_field(name='Member Count', value=i['MemberCount'], inline=True)
                     embed.set_thumbnail(url=i['Image'])
                     embed = validation.addFieldsToEmbed(i, embed)
                     await ctx.respond(embed=embed,ephemeral=not public)
+                    forceFound =True
                     break
-                elif forces.index(i)+1 == len(forces):
-                    await ctx.respond(f'no force found with the name: {force}', ephemeral=True)
-                    break
-        else: 
-            await ctx.respond(f'no force found with the name: {force}', ephemeral=True)
-    @force.command(guild_ids=[*guildids], description="get the info for a force")
+            if not forceFound: 
+                await ctx.respond(f"no force found with name {force}")
+    @force.command(guild_ids=[*guildids], description="edit the info of a force")
     async def edit(
         self, ctx, 
         force: Option(str,'the force you want to get. ex: \'build divers\' or \'pizza grubbers\'' ,required=True),
@@ -110,6 +109,7 @@ class ForceCommands(commands.Cog):
     ):
         if validation.doesKeyExist("Forces"):
             forces = db["Forces"]
+            forceFound = False
             for i in forces:
                 if i['Name'].casefold().startswith(force.casefold()):
                     if i['Leader'] == ctx.author.id or validation.userHasRole(ctx.author, adminRoles):
@@ -133,12 +133,74 @@ class ForceCommands(commands.Cog):
                         index= forces.index(i)
                         forces[index][inputfield] = inputdata
                         await ctx.respond(f'{inputfield} changed to {inputdata} on {i["Name"]}',ephemeral=not public)
-                        break
                     else:
                         ctx.respond("You do not have permission to edit someone else's forms.",ephemeral=True)
                         return
-                elif forces.index(i)+1 == len(forces):
-                    await ctx.respond(f'no force found with the name: {force}', ephemeral=True)
+                    forceFound = True
                     break
+            if not forceFound:
+                await ctx.respond(f'no force found with the name: {force}', ephemeral=True)
         else: 
             await ctx.respond(f'no force found with the name: {force}', ephemeral=True)
+    @force.command(guild_ids=[*guildids], description="delete a force")
+    async def delete(self, ctx, 
+                     force: Option(str,'the force you want to get. ex: \'build divers\' or \'pizza grubbers\'' ,required=True),
+                     public: Option(bool, "makes the message only visible to you if false, True by default",required=False, default=False)
+    ):
+        if validation.doesKeyExist("Forces"):
+            forces = db["Forces"]
+            forceFound = False
+            for i in forces:
+                if i['Name'].casefold().startswith(force.casefold()):
+                    if i['Leader'] == ctx.author.id or validation.userHasRole(ctx.author, adminRoles):
+                        role = ctx.guild.get_role(i['RoleID'])
+                        await role.delete()
+                        forces.remove(i)
+                        await ctx.respond(f"force deleted {force}")
+                    else: await ctx.respond("you do not have permision to delete someone else's force", ephemeral= not public)
+                    forceFound = True
+            if not forceFound:
+                await ctx.respond(f'no force found with the name: {force}', ephemeral=True)
+        else:  await ctx.respond(f'no force found with the name: {force}', ephemeral=True)
+
+    @force.command(guild_ids=[*guildids], description="join a force")
+    async def join(self, ctx,
+                     force: Option(str,'the force you want to join. ex: \'build divers\' or \'pizza grubbers\'' ,required=True),
+                     public: Option(bool, "makes the message only visible to you if false, True by default",required=False, default=False)
+    ):
+        forceFound = False
+        if validation.doesKeyExist("Forces"):
+            forces = db["Forces"]
+            for i in forces:
+                if i['Name'].casefold().startswith(force.casefold()):
+                    role = ctx.guild.get_role(i['RoleID'])
+                    name = i['Name']
+                    await ctx.author.add_roles(role)
+                    i['MemberCount'] += 1
+                    await ctx.respond(f'You have been added to the force {name}')
+                    forceFound = True
+                    break
+        if not forceFound:
+            await ctx.respond(f'no force found with the name: {force}')
+    @force.command(guild_ids=[*guildids], description="join a force")
+    async def leave(self, ctx,
+                     force: Option(str,'the force you want to leave. ex: \'build divers\' or \'pizza grubbers\'' ,required=True),
+                     public: Option(bool, "makes the message only visible to you if false, True by default",required=False, default=False)
+    ):
+        forceFound = False
+        if validation.doesKeyExist("Forces"):
+            forces = db["Forces"]
+            for i in forces:
+                if i['Name'].casefold().startswith(force.casefold()):
+                    role = ctx.guild.get_role(i['RoleID'])
+                    name = i['Name']
+                    forceFound = True
+                    if validation.userHasRole(ctx.author, role.name) and ctx.author.id!=i['Leader'] :
+                        await ctx.author.remove_roles(role)
+                        i['MemberCount'] -= 1
+                        await ctx.respond(f'You have left the force {name}')
+                    else: 
+                        await ctx.respond(f'you are not in the force {name} and or are the leader and can not leave the force.')
+                    break
+        if not forceFound:
+            await ctx.respond(f'no force found with the name: {force}')

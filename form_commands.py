@@ -156,6 +156,7 @@ class FormCommands(commands.Cog):
         fieldname: Option(str, 'the name of the field',required=True),
         fielddata: Option(str, 'the data for the field',required=True),
         form: Option(str, "the form to add the field to",required=True),
+        inline: Option(bool, "will make the field apear to the left of the previous one",required=True),
         owner: Option(discord.Member, "the owner of the form requires perms", required=False,default=None),
         by: Option(str,"what to search by", choices=["Name", 'Id'], required=False, default='Name')
     ):
@@ -168,12 +169,15 @@ class FormCommands(commands.Cog):
             return
         dataBaseKey = str(owner.id) + "'s forms"
         userForms = db[dataBaseKey]
+        if inline == True:
+            fieldname = fieldname + '#INLINE'
         if by == 'Name':
             for i in userForms:
                 if i['Name'].casefold().startswith(form.casefold()):
+                    name = fieldname.strip('#INLINE')
                     index=userForms.index(i)
                     userForms[index][fieldname] = fielddata
-                    await ctx.respond(f'{fielddata} added to {fieldname} in {i["Name"]}',ephemeral=True)
+                    await ctx.respond(f'{fielddata} added to {name} in {i["Name"]}',ephemeral=True)
                     break
         elif by == 'Id':
             for i in userForms:
@@ -187,8 +191,7 @@ class FormCommands(commands.Cog):
     async def removefield(self, ctx,
         fieldname: Option(str, 'the name of the field',required=True),
         form: Option(str, "the form to add the field to",required=True),
-        owner: Option(discord.Member, "the owner of the form requires perms", required=False,default=None),
-        by: Option(str,"what to search by", choices=["Name", 'Id'], required=False, default='Name')
+        owner: Option(discord.Member, "the owner of the form requires perms", required=False,default=None)
     ):
         if owner == None:
             owner = ctx.author
@@ -199,20 +202,18 @@ class FormCommands(commands.Cog):
             return
         dataBaseKey = str(owner.id) + "'s forms"
         userForms = db[dataBaseKey]
-        if by == 'Name':
-            for i in userForms:
-                if i['Name'].casefold().startswith(form.casefold()):
-                    index=userForms.index(i)
+        for i in userForms:
+            if i['Name'].casefold().startswith(form.casefold()):
+                index=userForms.index(i)
+                inlineField = fieldname + '#INLINE'
+                if userForms[index][fieldname] in userForms[index]: 
                     del userForms[index][fieldname]
                     await ctx.respond(f"field {fieldname} removed from {form}")
-                    break
-        elif by == 'Id':
-            for i in userForms:
-                if userForms.index(i) == form:
-                    index=userForms.index(i)
-                    del userForms[index][fieldname]
+                elif userForms[index][inlineField] in userForms[index]:
+                    del userForms[index][inlineField]
                     await ctx.respond(f"field {fieldname} removed from {form}")
-                    break
+                else:
+                    await ctx.respon*(f'no field found with name {fieldname}')
     @form.command(guild_ids=[*guildids], description="find a character or gunpla")
     async def search(
         self, ctx, 

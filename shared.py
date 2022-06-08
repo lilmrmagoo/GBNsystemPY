@@ -41,10 +41,17 @@ class validation():
                 hasRole = True
         return hasRole
     def addFieldsToEmbed(dict, embed):
-        defualtFields = ['Name', 'Desc','Link','Owner','Leader','Image','Colour','Ranking','Form Type','Members','RoleID']
+        defualtFields = ['Name', 'Desc','Link','Owner','Leader','Image','Colour','Ranking','Form Type','Members','RoleID','MemberCount']
         for i in dict:
             if i not in defualtFields: 
-                embed.add_field(name=i, value=dict[i], inline=True)
+                x = dict[i]
+                inline = False
+                if i.find('INLINE') != -1:
+                    i = i.strip('#INLINE')
+                    inline = True
+                x = x.split("\\n")
+                s = '\n'.join(x)
+                embed.add_field(name=i, value=s, inline=inline)
         return embed
 class conversion():
     def hexToRGB(hex):
