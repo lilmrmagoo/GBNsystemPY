@@ -1,8 +1,12 @@
-DONE add force edit command
-DONE add force delete command (check if user is leader or mod)
-DONE add force join command
-DONE add force leave command
+*needs testing
 
-add force member sub command group
-add force member add command (name and role args)
-add force member remove command
+DONE add force member sub command group
+DONE add force member add command (name and role args)
+DONE add force member remove command
+DONE add force member list command
+
+make force editing and creating use popup*
+
+add buttons for forces to switch between member list and info
+
+add veiw commands for fancy gui.

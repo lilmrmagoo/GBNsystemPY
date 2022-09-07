@@ -1,10 +1,45 @@
 import discord
 from discord.commands import SlashCommandGroup, Option
 from discord.ext import commands
+from discord.ui import Modal, InputText
 from replit import db
 from shared import guildIds, validation, conversion, adminRoles
 guildids = guildIds
 
+def createEmbed(dict, owner):
+    desc = dict['Desc']
+    inlink = dict['Link']
+    inimage = dict['Image']
+    link = None
+    image = None
+    if validation.validGoogleDoc(inlink) or validation.validDiscordLink(inlink):
+        link = inlink
+    else:
+        print(f'{inlink} is an invalid link')
+        link = 'https://discord.com/channels/479493485037355022/591348299752013837/917927502872215552'
+    if inimage.startswith('https') or inimage.startswith('http'):
+        image = inimage
+    else:
+        image ='https://cdn.discordapp.com/avatars/826265731930128394/ce7d79e6332e54a9a394b42cb182ddf7.png?size=4096'
+    embed= discord.Embed(title=dict['Name'],url=link, description=desc, color=0x2ca098)
+    embed.set_author(name=f"{owner}'s", icon_url=owner.display_avatar)
+    embed.set_thumbnail(url=image)
+    embed = validation.addFieldsToEmbed(dict, embed)
+    return embed
+
+def sortMembersByRole(members):
+    roles = []
+    for i in members:
+        role = i['Role']
+        name = i['Name']
+        doc = i['Doc']
+        sorted = {}
+        if role in roles:
+            sorted[role][name]=doc
+        else:
+            roles.append(role)
+            sorted[role] = {name:doc}
+    return sorted
 def checkDupeName(name, list):
     dups = False
     for i in list:
@@ -12,69 +47,148 @@ def checkDupeName(name, list):
             dups = True
     return dups
         
+class forceModal(Modal):
+    def __init__(self, oldValues=None, edit=False, *args, **kwargs) -> None:
+        self.edit = edit
+        if not edit:
+            super().__init__(*args, **kwargs)
+            self.add_item(InputText(label="Name", placeholder="Put the name here", style= discord.InputTextStyle.short,row=0))
+            self.add_item(InputText(label="Description", placeholder="describe the form here", style=discord.InputTextStyle.long,row=1))
+            self.add_item(InputText(label="Image", placeholder="put a link to an image here", style=discord.InputTextStyle.short,row = 2 ,required=False))
+            self.add_item(InputText(label="Document", placeholder="put a link to a google doc or discord message link here", style=discord.InputTextStyle.short, row= 3))
+            self.add_item(InputText(label="Color", placeholder="put a the colour associated with the force in hexademical form ex: ffffff would be white",value="ffffff",min_length=6,max_length=6, style=discord.InputTextStyle.short, row= 4))
+        elif edit:
+            super().__init__(*args, **kwargs)
+            self.add_item(InputText(label="Name", placeholder="Put the name here", style= discord.InputTextStyle.short,row=0,value=oldValues['Name']))
+            self.add_item(InputText(label="Description", placeholder="describe the form here", style=discord.InputTextStyle.long,row=1,value=oldValues['Desc']))
+            self.add_item(InputText(label="Image", placeholder="put a link to an image here", style=discord.InputTextStyle.short,row = 2 ,required=False,value=oldValues['Image']))
+            self.add_item(InputText(label="Document", placeholder="put a link to a google doc or discord message link here", style=discord.InputTextStyle.short, row= 3, value=oldValues['Link']))
+            self.add_item(InputText(label="Color", placeholder="put a the colour associated with the force in hexademical form ex: ffffff would be white",value=oldValues['Colour'],min_length=6,max_length=6, style=discord.InputTextStyle.short, row= 4))
+            self.oldName = oldValues['Name']
+            self.oldRole = oldValues['RoleID']
+    async def callback(self, interaction: discord.Interaction):
+        googledoc = self.children[3].value
+        desc = self.children[1].value
+        image = self.children[2].value
+        name = self.children[0].value
+        colour = self.children[4].value
+        leader = interaction.user
+        newForce = {
+            "Name": name,
+            "Link": googledoc,
+            "Leader": leader.id,
+            "Desc": desc,
+            "Image": " ",
+            "Colour": colour.strip('#'),
+            "Ranking": 0,
+            "MemberCount": 1,
+            "Members": [],
+            "RoleID": 0
+        }
 
+        if self.edit:
+            forces = db["Forces"] 
+            for i in forces:
+                if i['Name'] == self.oldName:
+                    index = forces.index(i)
+                    role = interaction.guild.get_role(self.oldRole)
+                    role = await role.edit(name=name,color=int(colour.strip('#'),16))
+                    newForce['RoleID'] = role.id
+                    forces[index] = newForce
+                    embed = createEmbed(newForce,leader)
+                    await interaction.response.send_message(f"{name} has been edited!", embed=embed,ephemeral=True)             
+        else:
+            if validation.doesKeyExist("Forces"):
+                forces = db["Forces"] 
+                if checkDupeName(name, forces):
+                    await interaction.response.send_message(f'A force with the name {name} already exists please chose another name.', ephemeral=True)
+                else:
+                    role = await interaction.guild.create_role(name=name, color=int(colour.strip('#'),16),reason="new force role")
+                    await leader.add_roles(role)
+                    newForce["RoleID"] = role.id
+                    forces.append(newForce)
+                    db["Forces"] = forces
+            
+            else:
+                role = await interaction.guild.create_role(name=name, color=int(colour,16),reason="new force role")
+                await leader.add_roles(role)
+                newForce["RoleID"] = role.id
+                db["Forces"] = [newForce]
+            forces = db["Forces"]
+    
+            embed = createEmbed(newForce,leader)
+            await interaction.response.send_message(f"{name} has been created!", embed=embed,ephemeral=True)
 
 class ForceCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     force = SlashCommandGroup('force', 'commands to edit or create forces.', default_member_permissions=discord.Permissions(administrator=True))
-
+    memberCommandGroup = force.create_subgroup('member','commands to add characters as members to forces')
+    
     @force.command(guild_ids=[*guildids], description='Create a Force')
-    async def create(self, ctx,
-        name: Option(str,"the name of the force", required=True),
-        googledoc: Option(str, "the link to the forces google doc"),
-        colour: Option(str, "the colour associated with the force in hexademical form ex: ffffff would be white", default='ffffff'),
-        leader: Option(discord.Member, "the leader of the force leave blank if it is you", required=False,default=None)
-    ):
-        if leader == None:
-            leader = ctx.author
-        if not validation.validHexColor(colour):
-            await ctx.respond("invalid colour given please use colours in hex value ex: #19778a")
-            return
-        if validation.doesKeyExist("Forces"):
-            
-            forces = db["Forces"] 
-            if checkDupeName(name, forces):
-                await ctx.respond(f'A force with the name {name} already exists please chose another name.', ephemeral=True)
-            else:
-                forceDict ={
-                    "Name": name,
-                    "Link": googledoc,
-                    "Leader": leader.id,
-                    "Desc": " ",
-                    "Image": " ",
-                    "Colour": colour.strip('#'),
-                    "Ranking": 0,
-                    "MemberCount": 1,
-                    "RoleID": 0
-                    
-                }
-                role = await ctx.guild.create_role(name=name, color=int(colour.strip('#'),16),reason="new force role")
-                await leader.add_roles(role)
-                forceDict["RoleID"] = role.id
-                forces.append(forceDict)
-                db["Forces"] = forces
-                await ctx.respond(f"{name} has been created!")
-            
-        else:
-            newForce = {
-                "Name": name,
-                "Link": googledoc,
-                "Leader": leader.id,
-                "Desc": " ",
-                "Image": " ",
-                "Colour": colour.strip('#'),
-                "Ranking": 0,
-                "MemberCount": 1,
-                "RoleID": 0
-            }
-
-            role = await ctx.guild.create_role(name=name, color=int(colour,16),reason="new force role")
-            await leader.add_roles(role)
-            newForce["RoleID"] = role.id
-            db["Forces"] = [newForce]
-            await ctx.respond(f"{name} has been created!")
+    async def create(self,ctx):
+        print('command create force activated')
+        modal = forceModal(title=f"Create a Force ")
+        await ctx.send_modal(modal)
+    
+#    @force.command(guild_ids=[*guildids], description='Create a Force')
+#   async def create(self, ctx,
+#       name: Option(str,"the name of the force", required=True),
+#       googledoc: Option(str, "the link to the forces google doc"),
+#       colour: Option(str, "the colour associated with the force in hexademical form ex: ffffff would be white", default='ffffff'),
+#        leader: Option(discord.Member, "the leader of the force leave blank if it is you", required=False,default=None)
+#    ):
+#        if leader == None:
+#            leader = ctx.author
+#        if not validation.validHexColor(colour):
+#            await ctx.respond("invalid colour given please use colours in hex value ex: #19778a")
+#            return
+#        if validation.doesKeyExist("Forces"):
+#            
+#           forces = db["Forces"] 
+#            if checkDupeName(name, forces):
+#                await ctx.respond(f'A force with the name {name} already exists please chose another name.', ephemeral=True)
+#            else:
+#               forceDict ={
+#                    "Name": name,
+#                    "Link": googledoc,
+#                    "Leader": leader.id,
+#                    "Desc": " ",
+#                    "Image": " ",
+#                    "Colour": colour.strip('#'),
+#                    "Ranking": 0,
+#                    "Members": [],
+#                    "MemberCount": 1,
+#                    "RoleID": 0
+#                    
+#                }
+#                role = await ctx.guild.create_role(name=name, color=int(colour.strip('#'),16),reason="new force role")
+#                await leader.add_roles(role)
+#                forceDict["RoleID"] = role.id
+#                forces.append(forceDict)
+#                db["Forces"] = forces
+#                await ctx.respond(f"{name} has been created!")
+#            
+#        else:
+#            newForce = {
+#                "Name": name,
+#                "Link": googledoc,
+#                "Leader": leader.id,
+#                "Desc": " ",
+#                "Image": " ",
+#                "Colour": colour.strip('#'),
+#                "Ranking": 0,
+#                "MemberCount": 1,
+#                "Members": [],
+#                "RoleID": 0
+#            }
+#
+#            role = await ctx.guild.create_role(name=name, color=int(colour,16),reason="new force role")
+#            await leader.add_roles(role)
+#            newForce["RoleID"] = role.id
+#            db["Forces"] = [newForce]
+#            await ctx.respond(f"{name} has been created!")
 
     @force.command(guild_ids=[*guildids], description="get the info for a force")
     async def get(
@@ -176,7 +290,6 @@ class ForceCommands(commands.Cog):
                     role = ctx.guild.get_role(i['RoleID'])
                     name = i['Name']
                     await ctx.author.add_roles(role)
-                    i['MemberCount'] += 1
                     await ctx.respond(f'You have been added to the force {name}')
                     forceFound = True
                     break
@@ -197,10 +310,80 @@ class ForceCommands(commands.Cog):
                     forceFound = True
                     if validation.userHasRole(ctx.author, role.name) and ctx.author.id!=i['Leader'] :
                         await ctx.author.remove_roles(role)
-                        i['MemberCount'] -= 1
                         await ctx.respond(f'You have left the force {name}')
                     else: 
                         await ctx.respond(f'you are not in the force {name} and or are the leader and can not leave the force.')
                     break
         if not forceFound:
             await ctx.respond(f'no force found with the name: {force}')
+    @memberCommandGroup.command(guild_ids=[*guildids], description="add a member to a force")
+    async def add(self, ctx, 
+                  force: Option(str,"the force to add the member to", required=True),
+                  member: Option(str, "the name of the member",required=True),
+                  role: Option(str, "the role of the member, Ex: officer, junior etc", required=True),
+                  doc: Option(str, 'A link for the character', required=True)
+    ):
+        forceFound = False
+        for i in db['Forces']:
+            if i['Name'].casefold().startswith(force.casefold()):
+                forceFound = True
+                if 'Members' not in i.keys():
+                    i['Members'] = []
+                members = i['Members']    
+                dict = {"Name":member,"Role":role,"Doc":doc}
+                if not members == None:
+                    members.append(dict)
+                else: 
+                    members = [dict]
+                i['Members'] = members
+                await ctx.respond(f"{role} {member} has been added to {i['Name']}")
+                
+                break
+        if not forceFound:
+            await ctx.respond(f"no force found with the name {force}",ephemeral=True)
+    @memberCommandGroup.command(guild_ids=[*guildids], description="list the members in a force")
+    async def list(self,ctx, 
+                   force: Option(str,"the force to add the member to", required=True),
+                   public: Option(bool,"Will show the result to only you if false", default=True)
+    ):
+        forceFound = False
+        for i in db['Forces']:
+            if i['Name'].casefold().startswith(force.casefold()):
+                forceFound = True
+                members = sortMembersByRole(i['Members'])
+                forceName = i['Name']
+                embed=discord.Embed(title=f"{forceName}", url=i['Link'],color=0x2ca098)
+                for i in members.keys():
+                    list = []
+                    for j in members[i]:
+                        doc = members[i][j]
+                        list.append(f"[{j}]({doc})")
+                    finalString = '\n'.join(list)
+                    embed.add_field(name=f"{i}s",value=finalString,inline=False)
+                await ctx.respond(embed=embed,ephemeral=not public)
+        if not forceFound:
+            await ctx.respond(f"no force found with the name {force}",ephemeral=True)
+    @memberCommandGroup.command(guild_ids=[*guildids], description="remove a member from a force")
+    async def remove(self,ctx, 
+                     force: Option(str,"the force to remove the memebr from.", required=True),
+                     member: Option(str,"the member to remove from the force", required=True),
+                     public: Option(bool,"whether or not to make te response public", required=False)
+                     
+    ):
+        forceFound = False
+        memberFound = False
+        for i in db['Forces']:
+            if i['Name'].casefold().startswith(force.casefold()):
+                forceFound = True
+                forceName = i['Name']
+                for j in i['Members']:
+                    if j['Name'].casefold().startswith(member.casefold()):
+                        memberFound = True
+                        i["Members"].remove(j)
+                        await ctx.respond(f"{j['Name']} removed from {forceName}")
+                        break
+                break
+        if not forceFound:
+            await ctx.respond(f"no force found with the name {force}",ephemeral=True)
+        if not memberFound:
+            await ctx.respond(f"{member} is not a member of {force}",ephemeral=True)

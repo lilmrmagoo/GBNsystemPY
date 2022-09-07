@@ -1,9 +1,83 @@
 import discord
 from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
+from discord.ui import InputText, Modal
 from replit import db
 from shared import adminRoles, validation, guildIds
 guildids = guildIds
+
+def createEmbed(dict, owner):
+    desc = dict['Desc']
+    inlink = dict['Link']
+    inimage = dict['Image']
+    link = None
+    image = None
+    print(inlink)
+    if validation.validGoogleDoc(inlink) or validation.validDiscordLink(inlink):
+        link = inlink
+    else:
+        print('invalid link')
+        link = 'https://discord.com/channels/479493485037355022/591348299752013837/917927502872215552'
+        print(link)
+    if inimage.startswith('https') or inimage.startswith('http'):
+        image = inimage
+    else:
+        image ='https://cdn.discordapp.com/avatars/826265731930128394/ce7d79e6332e54a9a394b42cb182ddf7.png?size=4096'
+    embed= discord.Embed(title=dict['Name'],url=link, description=desc, color=0x2ca098)
+    embed.set_author(name=f"{owner}'s", icon_url=owner.display_avatar)
+    embed.set_thumbnail(url=image)
+    embed = validation.addFieldsToEmbed(dict, embed)
+    return embed
+
+class FormModal(Modal):
+    def __init__(self, type=None, oldValues=None, edit=False, *args, **kwargs) -> None:
+        self.edit = edit
+        self.type = type
+        if not edit:
+            super().__init__(*args, **kwargs)
+            self.add_item(InputText(label="Name", placeholder="Put the name here", style= discord.InputTextStyle.short,row=0))
+            self.add_item(InputText(label="Description", placeholder="describe the form here", style=discord.InputTextStyle.long,row=1))
+            self.add_item(InputText(label="Image", placeholder="put a link to an image here", style=discord.InputTextStyle.short,row = 2 ,required=False))
+            self.add_item(InputText(label="Document", placeholder="put a link to a google doc or discord message link here", style=discord.InputTextStyle.short, row= 3))
+        elif edit:
+            super().__init__(*args, **kwargs)
+            self.add_item(InputText(label="Name", placeholder="Put the name here", style= discord.InputTextStyle.short,row=0,value=oldValues['Name']))
+            self.add_item(InputText(label="Description", placeholder="describe the form here", style=discord.InputTextStyle.long,row=1,value=oldValues['Desc']))
+            self.add_item(InputText(label="Image", placeholder="put a link to an image here", style=discord.InputTextStyle.short,row = 2 ,required=False,value=oldValues['Image']))
+            self.add_item(InputText(label="Document", placeholder="put a link to a google doc or discord message link here", style=discord.InputTextStyle.short, row= 3, value=oldValues['Link']))
+            self.oldName = oldValues['Name']
+    async def callback(self, interaction: discord.Interaction):
+        googledoc = self.children[3].value
+        desc = self.children[1].value
+        image = self.children[2].value
+        name = self.children[0].value
+        owner = interaction.user
+        formtype = self.type
+        dataBaseKey = str(owner.id) + "'s forms"
+        dict = {
+                    "Name": name,
+                    "Link": googledoc,
+                    "Form Type": formtype,
+                    "Desc": desc,
+                    "Image": image
+                }
+        userForms = db.get(dataBaseKey)
+        if self.edit:
+            for i in userForms:
+                if i['Name'] == self.oldName:
+                    index = userForms.index(i)
+                    userForms[index] = dict
+                    embed = createEmbed(dict,owner)
+                    await interaction.response.send_message(f"{owner}'s {formtype} has been edited!", embed=embed,ephemeral=True)             
+        else:
+            if validation.doesKeyExist(dataBaseKey):
+                userForms.append(dict)
+                db[dataBaseKey] = userForms
+            else:
+                db[dataBaseKey] = [dict]
+            embed = createEmbed(dict,owner)
+            await interaction.response.send_message(f"{owner}'s {formtype} has been created!", embed=embed,ephemeral=True)
+
 
 class FormCommands(commands.Cog):
     def __init__(self, bot):
@@ -13,36 +87,11 @@ class FormCommands(commands.Cog):
     
     @form.command(guild_ids=[*guildids], description='Create a character or gunpla form that people can access')
     async def create(self, ctx, 
-        googledoc: Option(str,"the form link, or discord message link",required=True),
-        formtype: Option(str,"type of form",choices=["Gunpla", "Character", "Other"],required=True),
-        name: Option(str,"Name for character or gunpla",required=True),
-        owner: Option(discord.Member,"The owner of the form",required=False)
+        formtype: Option(str,"type of form",choices=["Gunpla", "Character", "Other"],required=True)
     ):
         print('command createform activated')
-        if validation.validGoogleDoc(googledoc) or validation.validDiscordLink(googledoc):
-            if owner == None:
-                owner = ctx.author
-            dataBaseKey = str(owner.id) + "'s forms"
-            if validation.doesKeyExist(dataBaseKey):
-                userForms = db.get(dataBaseKey)
-                userForms.append({
-                    "Name": name,
-                    "Link": googledoc,
-                    "Form Type": formtype,
-                    "Desc":'',
-                    "Image":''
-                })
-                db[dataBaseKey] = userForms
-            else:
-                newDict = {"Name": name, "Link": googledoc, "Form Type": formtype, "Desc":'','Image':''}
-                db[dataBaseKey] = [newDict]
-            await ctx.respond(f"{owner}'s {formtype} has been created!")
-            print(dataBaseKey)
-            print(db[dataBaseKey])
-    
-        else:
-            await ctx.respond('non valid link provided')
-            print(owner)
+        modal = FormModal(title=f"Create a {formtype} Form",type=formtype)
+        await ctx.send_modal(modal)
     
     
     @form.command(guild_ids=[*guildids], description="delete a gunpla or character")
@@ -119,7 +168,7 @@ class FormCommands(commands.Cog):
         else: await ctx.respond(f'{owner} has no forms', ephemeral=True)
     
     @form.command(guild_ids=[*guildids], description="edit the data of a form")
-    async def edit(
+    async def oldedit(
         self, ctx, 
         form: Option(str,'the form you want to get. ex: \'My gundam\' or \'my character\'' ,required=True),        
         inputfield: Option(str,'the field you want to edit', choices=["Name","Link","Desc","Image","Type"],required=True),
@@ -150,7 +199,15 @@ class FormCommands(commands.Cog):
                     userForms[index][inputfield] = inputdata
                     await ctx.respond(f'{inputfield} changed to {inputdata} on {i["Name"]}',ephemeral=True)
                     break
-    
+
+    @form.command(guild_ids=[*guildids], description="edit the data of a form")
+    async def edit(self, ctx, form: Option(str, "the form to edit", required=True)):
+        dataBaseKey = str(ctx.author.id) + "'s forms"
+        userForms = db[dataBaseKey] 
+        for i in userForms:
+            if i['Name'].casefold().startswith(form.casefold()):
+                modal = FormModal(title=f"Edit your {i['Name']} Form",edit=True,oldValues=i,type=i['Form Type'])
+                await ctx.send_modal(modal)
     @form.command(guild_ids=[*guildids])
     async def addfield(self, ctx,
         fieldname: Option(str, 'the name of the field',required=True),
@@ -178,13 +235,6 @@ class FormCommands(commands.Cog):
                     index=userForms.index(i)
                     userForms[index][fieldname] = fielddata
                     await ctx.respond(f'{fielddata} added to {name} in {i["Name"]}',ephemeral=True)
-                    break
-        elif by == 'Id':
-            for i in userForms:
-                if userForms.index(i) == form:
-                    index=userForms.index(i)
-                    userForms[index][fieldname] = fielddata
-                    await ctx.respond(f'{fielddata} added to {fieldname} in {i["Name"]}',ephemeral=True)
                     break
     
     @form.command(guild_ids=[*guildids])
@@ -244,3 +294,32 @@ class FormCommands(commands.Cog):
                     break
         if not searchComplete:
             await ctx.respond(f'no form found with name {form}', ephemeral=not public)
+    @form.command(guild_ids=[*guildids], description="get a list of a users forms")
+    async def list(self, ctx, owner: Option(discord.Member, "the person who's forms you wish to get", required=False, default=None)):
+        if owner == None:
+            owner = ctx.author
+        dataBaseKey = str(owner.id) + "'s forms"
+        if validation.doesKeyExist(dataBaseKey):
+            userForms = db.get(dataBaseKey)
+            embed = discord.Embed(title=' blank', color=0x2ca098)
+            embed.set_author(name=f"{owner.id}'s forms", url=owner.avatar)
+            gunplas = None
+            characters = None
+            others = None
+            for i in userForms:
+                name = i['Name']
+                if i['Form Type'] == 'Gunpla':
+                    gunplas = ''
+                    gunplas = f'{gunplas}\n{name}'
+                elif i['Form Type'] == 'Character':
+                    characters = ''
+                    characters = f'{characters}\n{name}'
+                elif i['Form Type'] == 'Other':
+                    others = ''
+                    others = f'{others}\n{name}'
+            embed.add_field(name='Gunpla Forms', value=gunplas)
+            embed.add_field(name='Character Forms', value=characters)
+            embed.add_field(name='Other Forms', value=others,)
+            await ctx.respond(embed=embed)
+        else:
+            await ctx.respond('That user does not have any forms')

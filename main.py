@@ -63,7 +63,8 @@ class Dev(commands.Cog):
         del db[dataBaseKey]
         await ctx.respond('user has been cleared', ephemeral=True)
     @dev.command(guild_ids=[*guildids])
-    async def getkey(self, ctx, owner: Option(discord.Member,'returns all a users values under their form key')):
+    async def getkey(self, ctx, 
+                     owner: Option(discord.Member,'returns all a users values under their form key')):
         dataBaseKey = str(owner.id) + "'s forms"
         await ctx.respond(str(db[dataBaseKey]), ephemeral=True)
     @dev.command(guild_ids=[*guildids])
@@ -80,6 +81,10 @@ class Dev(commands.Cog):
     async def newtest(self, ctx):
         guild = ctx.guild
         await ctx.respond(f'test worked, guild: {guild}', ephemeral=True)
+    @dev.command(guild_ids=[*guildids])
+    async def listforces(self, ctx):
+        forces = db['Forces']
+        await ctx.respond(f'{forces}', ephemeral=True)
 
 #bot.add_application_command(form)
 #bot.add_application_command(dev)
