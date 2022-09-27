@@ -92,4 +92,7 @@ class Dev(commands.Cog):
 
 setup(bot)
 
-bot.run(token)
+try:
+    bot.run(token)
+except:
+    os.system("kill 1")

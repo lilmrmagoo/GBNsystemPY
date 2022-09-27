@@ -1,11 +1,14 @@
 *needs testing
 
-DONE add force member sub command group
-DONE add force member add command (name and role args)
-DONE add force member remove command
-DONE add force member list command
+add Ids to stuff? or Dupe check names
 
-make force editing and creating use popup*
+add force invite command
+add force invite only mode
+
+DONE make force editing and creating use popup*
+
+
+add stat set/ assign command for custom stats
 
 add buttons for forces to switch between member list and info
 

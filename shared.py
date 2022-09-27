@@ -41,7 +41,7 @@ class validation():
                 hasRole = True
         return hasRole
     def addFieldsToEmbed(dict, embed):
-        defualtFields = ['Name', 'Desc','Link','Owner','Leader','Image','Colour','Ranking','Form Type','Members','RoleID','MemberCount']
+        defualtFields = ['Name', 'Desc','Link','Owner','Leader','Image','Colour','Ranking','Form Type','Members','RoleID','MemberCount', 'Stats', 'BaseStats','','ID']
         for i in dict:
             if i not in defualtFields: 
                 x = dict[i]
