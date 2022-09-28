@@ -1,11 +1,32 @@
 import discord
 from discord.commands import SlashCommandGroup, Option
 from discord.ext import commands
-from discord.ui import Modal, InputText
+from discord.ui import Modal, InputText, Button, View
 from replit import db
 from shared import guildIds, validation, conversion, adminRoles
 guildids = guildIds
 
+def createPageView(dict):
+    view = PageView(timeout=300.0,disable_on_timeout=True)
+    numofPages = 0
+    if "Members" in dict.keys():
+        view.add_item(FormNavButton(form=dict,label="Members",page="characters"))
+        numofPages+=1
+    if numofPages>0:
+        view.add_item(FormNavButton(form=dict,label="Info",page="info"))
+    return view
+def createMemberEmbed(dict):
+    members = sortMembersByRole(dict['Members'])
+    forceName = dict['Name']
+    embed=discord.Embed(title=f"{forceName}", url=dict['Link'],color=0x2ca098)
+    for i in members.keys():
+        list = []
+        for j in members[i]:
+            doc = members[i][j]
+            list.append(f"[{j}]({doc})")
+        finalString = '\n'.join(list)
+        embed.add_field(name=f"{i}s",value=finalString,inline=False)
+    return embed
 def createEmbed(dict, owner):
     desc = dict['Desc']
     inlink = dict['Link']
@@ -24,11 +45,14 @@ def createEmbed(dict, owner):
     embed= discord.Embed(title=dict['Name'],url=link, description=desc, color=0x2ca098)
     embed.set_author(name=f"{owner}'s", icon_url=owner.display_avatar)
     embed.set_thumbnail(url=image)
+    embed.add_field(name='Leader', value=owner, inline=True)
+    embed.add_field(name='Member Count', value=dict['MemberCount'], inline=True)
     embed = validation.addFieldsToEmbed(dict, embed)
     return embed
 
 def sortMembersByRole(members):
     roles = []
+    sorted = {}
     for i in members:
         role = i['Role']
         name = i['Name']
@@ -47,7 +71,37 @@ def checkDupeName(name, list):
             dups = True
     return dups
         
-class forceModal(Modal):
+#class NestModal(Modal):
+    #def __init__(self,*args,**kwargs) -> None:
+
+class PageView(View):
+    def __init__(self, timeout=300,disable_on_timeout=True):
+        super().__init__(timeout=timeout)
+        self.disable_on_timeout=disable_on_timeout
+    async def on_timeout(self):
+        await self.interaction.edit_original_message(view=None)
+        self.disable_all_items()
+        self.clear_items()
+    def set_interaction(self, interaction):
+        self.interaction = interaction
+class FormNavButton(Button):
+    def __init__(self,page=None,form=None,label=None):
+        super().__init__(label=label,style=discord.ButtonStyle.primary)
+        self.page = page
+        self.form = form
+    async def callback(self, interaction: discord.Interaction):
+        form = self.form
+        userID = form["Leader"]
+        guild = interaction.guild
+        user = await guild.fetch_member(userID)
+        print(f"guild: {guild} user: {user} userID: {userID}")
+        response = interaction.response
+        if self.page.casefold() == "characters":
+            await response.edit_message(embed=createMemberEmbed(form))
+        if self.page.casefold() == "info":
+            await response.edit_message(embed=createEmbed(form,user))
+
+class ForceModal(Modal):
     def __init__(self, oldValues=None, edit=False, *args, **kwargs) -> None:
         self.edit = edit
         if not edit:
@@ -133,7 +187,7 @@ class ForceCommands(commands.Cog):
     @force.command(guild_ids=[*guildids], description='Create a Force')
     async def create(self,ctx):
         print('command create force activated')
-        modal = forceModal(title=f"Create a Force ")
+        modal = ForceModal(title=f"Create a Force ")
         await ctx.send_modal(modal)
 
     @force.command(guild_ids=[*guildids], description="get the info for a force")
@@ -148,13 +202,10 @@ class ForceCommands(commands.Cog):
             for i in forces:
                 if i['Name'].casefold().startswith(force.casefold()):
                     owner = await ctx.guild.fetch_member(i['Leader'])
-                    desc = i['Desc']
-                    embed=discord.Embed(title=i['Name'], url=i['Link'], description=desc, color=0x2ca098)
-                    embed.add_field(name='Leader', value=owner, inline=True)
-                    embed.add_field(name='Member Count', value=i['MemberCount'], inline=True)
-                    embed.set_thumbnail(url=i['Image'])
-                    embed = validation.addFieldsToEmbed(i, embed)
-                    await ctx.respond(embed=embed,ephemeral=not public)
+                    embed=createEmbed(i,owner)
+                    view = createPageView(i)
+                    interaction = await ctx.respond(embed=embed,ephemeral=not public, view=view)
+                    view.set_interaction(interaction)
                     forceFound =True
                     break
             if not forceFound: 
@@ -169,7 +220,7 @@ class ForceCommands(commands.Cog):
         for i in forces:
             if i['Name'].casefold().startswith(force.casefold()):
                 if ctx.author.id == i['Leader']:
-                    modal = forceModal(title=f"Edit {i['Name']}.",edit=True,oldValues=i)
+                    modal = ForceModal(title=f"Edit {i['Name']}.",edit=True,oldValues=i)
                     await ctx.send_modal(modal)
                 else:
                     ctx.respond('you are not the leader of the force',ephemeral=True)
@@ -268,16 +319,7 @@ class ForceCommands(commands.Cog):
         for i in db['Forces']:
             if i['Name'].casefold().startswith(force.casefold()):
                 forceFound = True
-                members = sortMembersByRole(i['Members'])
-                forceName = i['Name']
-                embed=discord.Embed(title=f"{forceName}", url=i['Link'],color=0x2ca098)
-                for i in members.keys():
-                    list = []
-                    for j in members[i]:
-                        doc = members[i][j]
-                        list.append(f"[{j}]({doc})")
-                    finalString = '\n'.join(list)
-                    embed.add_field(name=f"{i}s",value=finalString,inline=False)
+                embed = createMemberEmbed(i)
                 await ctx.respond(embed=embed,ephemeral=not public)
         if not forceFound:
             await ctx.respond(f"no force found with the name {force}",ephemeral=True)

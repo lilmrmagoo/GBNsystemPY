@@ -1,6 +1,29 @@
 from replit import db
+import discord
+import discord.ui
 adminRoles = ['helper', 'Moderators', 'Owner']
 guildIds= [479493485037355022,472944754397806619]
+
+
+class Confirm(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.value = None
+        self.interaction = None
+    # When the confirm button is pressed, set the inner value
+    # to `True` and stop the View from listening to more input.
+    # We also send the user an ephemeral message that we're confirming their choice.
+    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
+    async def confirm_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.interaction = await interaction.response.send_message("Confirming...")
+        self.value = True
+        self.stop()
+
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.grey)
+    async def cancel_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.interaction = await interaction.response.send_message("Canceling...",ephemeral=True)
+        self.value = False
+        self.stop()
 
 class validation():
     def validGoogleDoc(input):
