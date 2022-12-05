@@ -3,7 +3,7 @@ import discord
 import discord.ui
 adminRoles = ['helper', 'Moderators', 'Owner']
 guildIds= [479493485037355022,472944754397806619]
-
+Ranks = ['F','E','D','C','B','A','S','SS']
 
 class Confirm(discord.ui.View):
     def __init__(self):
@@ -24,6 +24,7 @@ class Confirm(discord.ui.View):
         self.interaction = await interaction.response.send_message("Canceling...",ephemeral=True)
         self.value = False
         self.stop()
+        
 
 class validation():
     def validGoogleDoc(input):

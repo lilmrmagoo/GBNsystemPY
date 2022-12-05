@@ -78,7 +78,7 @@ class PageView(View):
     async def on_timeout(self):
         self.disable_all_items()
         self.clear_items()
-        await self.interaction.edit_original_message(view=None)
+        await self.interaction.edit_original_response(view=None)
     def set_interaction(self, interaction):
         self.interaction = interaction
 class FormNavButton(Button):
@@ -189,7 +189,7 @@ class FormModal(Modal):
             self.add_item(
                 InputText(label="Description",
                           placeholder="describe the form here",
-                          style=discord.InputTextStyle.long,
+                          style=discord.InputTextStyle.long,max_length=1000,
                           row=1))
             self.add_item(
                 InputText(label="Image",
@@ -241,7 +241,6 @@ class FormModal(Modal):
         image = self.children[2].value
         name = self.children[0].value
         owner = self.owner
-        del db["IDs"] 
         if not validation.doesKeyExist("IDs"):
             db["IDs"]= {}
             IDs = db["IDs"]
@@ -398,14 +397,14 @@ class FormCommands(commands.Cog):
                     await view.wait()
                     interaction = view.interaction
                     if view.value == None:
-                        await interaction.edit_original_message(content=f'timed out')
+                        await interaction.edit_original_response(content='Timed out')
                         break
                     elif view.value:
                         userForms.remove(i)
-                        await interaction.edit_original_message(content=f"{formtype} Form: {form} deleted by {by}",view=None)
+                        await interaction.edit_original_response(content=f"{formtype} Form: {form} deleted by {by}",view=None)
                         break
                     else:
-                        await interaction.edit_original_message(content=f'Canceled')
+                        await interaction.edit_original_response(content=f'Canceled')
         elif by == 'Name':
             for i in userForms:
                 if i['Name'].casefold().startswith(form.casefold()):
@@ -417,14 +416,14 @@ class FormCommands(commands.Cog):
                     await view.wait()
                     interaction = view.interaction
                     if view.value == None:
-                        await interaction.edit_original_message(content=f'Interaction timed out')
+                        await interaction.edit_original_response(content=f'Interaction timed out')
                         break
                     elif view.value:
                         userForms.remove(i)
-                        await interaction.edit_original_message(content=f"{formtype} Form: {form} deleted by {by}",view=None)
+                        await interaction.edit_original_response(content=f"{formtype} Form: {form} deleted by {by}",view=None)
                         break
                     else:
-                        await interaction.edit_original_message(content=f'Interaction Canceled')
+                        await interaction.edit_original_response(content=f'Interaction Canceled')
         if not validform:
             await ctx.respond(f'form {form} not found',ephemeral=True)
     @form.command(guild_ids=[*guildids],description="get someone's character or gunpla")
@@ -441,38 +440,33 @@ class FormCommands(commands.Cog):
         if validation.doesKeyExist(dataBaseKey):
             userForms = db.get(dataBaseKey)
             if by == 'Id':
-                for i in userForms:
-                    if userForms.index(i) == form:
-                        view = createPageView(i)
-                        embed = createEmbed(i,owner)
-                        interaction = await ctx.respond(embed=embed,view=view, ephemeral=not public)
-                        view.set_interaction(interaction)
-                        break
-                    elif userForms.index(i) + 1 == len(userForms):
-                        await ctx.respond(
-                            f'no form found with selector: {by} and value: {form} from user: {owner}',
-                            ephemeral=True)
-                        break
+                selector = "ID"
             elif by == 'Name':
-                for i in userForms:
-                    if i['Name'].casefold().startswith(form.casefold()):
-                        view = createPageView(i)
-                        embed = createEmbed(i,owner)
-                        interaction = await ctx.respond(embed=embed,view=view, ephemeral=not public)
-                        view.set_interaction(interaction)
-                        break
-                    elif userForms.index(i) + 1 == len(userForms):
-                        await ctx.respond(
-                            f'no form found with selector: {by} and value: {form} from user: {owner}',
-                            ephemeral=True)
-                        break
+                selector = "Name"
             else:
                 await ctx.respond(
                     f'no form found with selector:{by} and value:{form}',
                     ephemeral=True)
+            for i in userForms:
+                if str(i[selector]).casefold().startswith(form.casefold()):
+                    if "ID" not in i.keys():
+                        IDs = db["IDs"]
+                        id = IDs["LastFormID"] + 1
+                        IDs["LastFormID"] = id
+                        i["ID"] = id
+                    view = createPageView(i)
+                    embed = createEmbed(i,owner)
+                    interaction = await ctx.respond(embed=embed,view=view, ephemeral=not public)
+                    view.set_interaction(interaction)
+                    break
+                elif userForms.index(i) + 1 == len(userForms):
+                    await ctx.respond(
+                        f'no form found with selector: {by} and value: {form} from user: {owner}',
+                        ephemeral=True)
+                    break
         else:
             await ctx.respond(f'{owner} has no forms', ephemeral=True)
-
+        
     @form.command(guild_ids=[*guildids], description="edit the data of a form")
     async def oldedit(
         self, ctx, form: Option(str,'the form you want to get. ex: \'My gundam\' or \'my character\'',required=True),

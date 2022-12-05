@@ -77,13 +77,12 @@ def checkDupeName(name, list):
 class PageView(View):
     def __init__(self, timeout=300,disable_on_timeout=True):
         super().__init__(timeout=timeout)
-        self.disable_on_timeout=disable_on_timeout
     async def on_timeout(self):
-        await self.interaction.edit_original_message(view=None)
+        await self.interaction.edit_original_response(view=None)
         self.disable_all_items()
         self.clear_items()
     def set_interaction(self, interaction):
-        self.interaction = interaction
+        self.interaction = interaction 
 class FormNavButton(Button):
     def __init__(self,page=None,form=None,label=None):
         super().__init__(label=label,style=discord.ButtonStyle.primary)
