@@ -7,6 +7,7 @@ from replit import db
 from commands.force_commands import ForceCommands
 from commands.form_commands import FormCommands
 from commands.user_commands import UserCommands
+from commands.view_commands import ViewCommands
 from shared import guildIds, adminRoles, validation
 
 keepalive.keep_alive()
@@ -20,6 +21,7 @@ def setup(bot):
     bot.add_cog(FormCommands(bot), override=True)
     bot.add_cog(ForceCommands(bot), override=True)
     bot.add_cog(UserCommands(bot), override=True)
+    bot.add_cog(ViewCommands(bot), override=True)
 
 
 # pretty useless now i think unsure don't want to break
@@ -66,7 +68,7 @@ class Dev(commands.Cog):
     @dev.command(guild_ids=[*guildids])
     async def clearuser(self, ctx, user: Option(discord.Member,'the users forms to delete')):
         dataBaseKeys = [str(user.id) + "'s forms", str(user.id) + "'s data"]
-        for i in databaseKeys:
+        for i in dataBaseKeys:
             del db[i]
         await ctx.respond('user has been cleared', ephemeral=True)
 
@@ -107,9 +109,6 @@ class Dev(commands.Cog):
             await ctx.respond('user has been cleared', ephemeral=True)
         except:
             await ctx.respond('Something has gone wrong', ephemeral=True)
-#bot.add_application_command(form)
-#bot.add_application_command(dev)
-#bot.add_application_command(force)
 
 setup(bot)
 

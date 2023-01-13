@@ -3,7 +3,8 @@ from discord.commands import SlashCommandGroup, Option
 from discord.ext import commands
 from replit import db
 from shared import guildIds, validation, conversion
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
+import os
 guildids = guildIds
 
 def merge(im1, im2):
@@ -16,7 +17,7 @@ def merge(im1, im2):
 
     return im
 
-class ViewCommands(commands.cog):
+class ViewCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -24,7 +25,16 @@ class ViewCommands(commands.cog):
 
 
     @view.command(guild_ids=[*guildids], description='view a force')
-    async def force(ctx, self, name: Option(str,"the name of the force", required=True)):
-        forceScreen = Image.open("force screen2.png")
-        
+    async def force(self, ctx, name: Option(str,"the name of the force", required=True)):
+        imageFolder = os.path.join(os.path.dirname( __file__ ), os.pardir, 'images')
+        imagePath = os.path.join(imageFolder, "force screen2.png")
+        fontFolder = os.path.join(os.path.dirname( __file__ ), os.pardir, 'fonts')
+        fontPath = os.path.join(fontFolder, "Play-Regular.ttf")
+        with Image.open(imagePath) as forceScreen:
+            draw = ImageDraw.Draw(forceScreen)
+            font = ImageFont.truetype(fontPath, size = 40)
+            draw.text((490,115),"FORCE NAME", font = font)
+            forceScreen.save(os.path.join(imageFolder,"Test1.png"))
+        ImageFile = discord.File(os.path.join(imageFolder,"Test1.png"))
+        await ctx.respond("force", file=ImageFile)
         

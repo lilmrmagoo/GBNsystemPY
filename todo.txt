@@ -1,14 +1,15 @@
 *needs testing
 ~works so far
 
-DONE add Ids to stuff~
+Make Classes for force and form
+ - add search method to create object from search
 
 add force invite command
 add force invite only mode
 DONE make force editing and creating use popup~
 
-make user info page simple
-figure out a good way to store ranks
+DONE make user info page simple
+DONE figure out a good way to store ranks
 make user eco and rank db
 add to user info page
 
@@ -17,4 +18,4 @@ add stat set/ assign command for custom stats
 DONE add buttons for forces to switch between member list and info
 
 add veiw commands for fancy gui.
--Need to do pillow or other image library research.
+DONE-Need to do pillow or other image library research.

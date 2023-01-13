@@ -6,6 +6,29 @@ from replit import db
 from shared import guildIds, validation, conversion, adminRoles
 guildids = guildIds
 
+
+class Force:
+    def __init__(self, Name: str,Link: str,Leader: int,
+                Desc: str = None,
+                Image: str = None,
+                Colour: str = None,
+                Ranking: int = 0,
+                MemberCount: int = 0,
+                Members: dict = [],
+                RoleID: int = 0
+    ):
+        args = locals()
+        for k,v in args:
+            setattr(self,k,v)
+    #writen by open ai's ai
+    def to_dict(self):
+      return {prop: getattr(self, prop) for prop in dir(self) if not callable(getattr(self, prop))and not prop.startswith("__")}
+
+    def from_dict(self, dict: dict):
+        return Force(**dict)
+
+
+
 def createPageView(dict):
     view = PageView(timeout=300.0,disable_on_timeout=True)
     numofPages = 0
