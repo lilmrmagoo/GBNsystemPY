@@ -1,12 +1,13 @@
 *needs testing
 ~works so far
 
-Make Classes for force and form
+Make Classes for form
  - add search method to create object from search
+
+DONE*Make classes for forces
 
 add force invite command
 add force invite only mode
-DONE make force editing and creating use popup~
 
 DONE make user info page simple
 DONE figure out a good way to store ranks
