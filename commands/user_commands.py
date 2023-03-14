@@ -85,7 +85,7 @@ class UserNavButton(Button):
         if self.page.casefold() == "forms":
             await response.edit_message(embed=createListEmbed(user))
         if self.page.casefold() == "info":
-            await response.edit_message(embed=createUserEmbed(user))
+            await response.edit_message(embed=createUserEmbed(user,IntializeUser(user)))
 
 class UserCommands(commands.Cog):
     def __init__(self, bot):

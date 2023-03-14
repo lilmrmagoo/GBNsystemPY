@@ -8,12 +8,28 @@ from commands.force_commands import ForceCommands
 from commands.form_commands import FormCommands
 from commands.user_commands import UserCommands
 from commands.view_commands import ViewCommands
+from submissions import SubmissionsCog
 from shared import guildIds, adminRoles, validation
 
+intents = discord.Intents.default()
+intents.guilds = True
+intents.messages = True
+intents.message_content = True
+
 keepalive.keep_alive()
-bot = discord.Bot()
+bot = discord.Bot(intents=intents)
 token = os.environ['TOKEN']
 guildids = guildIds
+
+
+@bot.listen()
+async def on_thread_udate(before, after):
+    print("thread updated")
+    if before.parent.type == discord.ChannelType.forum:
+        newTags = after.appliedd_tags - before.applied_tags
+        tagNames = [tag.name for tag in newTags]
+        if "test" in tagNames:
+            await after.send("it works")
 
 
 def setup(bot):
@@ -22,6 +38,7 @@ def setup(bot):
     bot.add_cog(ForceCommands(bot), override=True)
     bot.add_cog(UserCommands(bot), override=True)
     bot.add_cog(ViewCommands(bot), override=True)
+    bot.add_cog(SubmissionsCog(bot), override=True)
 
 
 # pretty useless now i think unsure don't want to break
@@ -61,12 +78,30 @@ class Dev(commands.Cog):
         default_member_permissions=discord.Permissions(administrator=True))
 
     @dev.command(guild_ids=[*guildids])
+    async def deleteforce(self, ctx,
+                          force: Option(int,
+                                        "the index of the force to delete")):
+        print("deletforces triggered")
+        forces = db["Forces"]
+        for i in forces:
+            index = forces.index(i)
+            if index == force:
+                force = i
+                name = force['Name']
+                del forces[index]
+                await ctx.respond(f"force deleted {name}")
+                break
+        else:
+            await ctx.respond("no force found", ephemeral=True)
+
+    @dev.command(guild_ids=[*guildids])
     async def delkey(self, ctx, key: Option(str, 'the users forms to delete')):
         del db[key]
         await ctx.respond('key has been deleted', ephemeral=True)
 
     @dev.command(guild_ids=[*guildids])
-    async def clearuser(self, ctx, user: Option(discord.Member,'the users forms to delete')):
+    async def clearuser(self, ctx, user: Option(discord.Member,
+                                                'the users forms to delete')):
         dataBaseKeys = [str(user.id) + "'s forms", str(user.id) + "'s data"]
         for i in dataBaseKeys:
             del db[i]
@@ -98,11 +133,17 @@ class Dev(commands.Cog):
 
     @dev.command(guild_ids=[*guildids])
     async def listforces(self, ctx):
+        print("listForces triggerd")
         forces = db['Forces']
-        await ctx.respond(f'{forces}', ephemeral=True)
+        message = ''
+        for i in forces:
+            message += f"\n{i}"
+        await ctx.respond(f'{message}', ephemeral=True)
 
     @dev.command(guild_ids=[*guildids])
-    async def deleteuserdata(self, ctx, user: Option(discord.Member,'the users forms to delete')):
+    async def deleteuserdata(self, ctx,
+                             user: Option(discord.Member,
+                                          'the users forms to delete')):
         userDataKey = f"{user.id}'s data'"
         try:
             del db[userDataKey]
@@ -110,9 +151,11 @@ class Dev(commands.Cog):
         except:
             await ctx.respond('Something has gone wrong', ephemeral=True)
 
+
 setup(bot)
 
 try:
     bot.run(token)
 except:
     os.system("kill 1")
+    os.system("pip install py-cord")

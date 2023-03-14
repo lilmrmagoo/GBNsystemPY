@@ -4,7 +4,6 @@
 Make Classes for form
  - add search method to create object from search
 
-DONE*Make classes for forces
 
 add force invite command
 add force invite only mode
@@ -18,5 +17,7 @@ add stat set/ assign command for custom stats
 
 DONE add buttons for forces to switch between member list and info
 
-add veiw commands for fancy gui.
+WIP add veiw commands for fancy gui.
 DONE-Need to do pillow or other image library research.
+
+check

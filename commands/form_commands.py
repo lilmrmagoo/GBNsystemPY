@@ -3,7 +3,7 @@ from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
 from discord.ui import InputText, Modal, View, Button
 from replit import db
-from shared import adminRoles, validation, guildIds, Confirm
+from shared import adminRoles, validation, guildIds, Confirm, PageView
 
 guildids = guildIds
 
@@ -71,16 +71,7 @@ def createEmbed(dict, owner):
     return embed
 
 
-class PageView(View):
-    def __init__(self, timeout=300,disable_on_timeout=True):
-        super().__init__(timeout=timeout)
-        self.disable_on_timeout=disable_on_timeout
-    async def on_timeout(self):
-        self.disable_all_items()
-        self.clear_items()
-        await self.interaction.edit_original_response(view=None)
-    def set_interaction(self, interaction):
-        self.interaction = interaction
+
 class FormNavButton(Button):
     def __init__(self,page=None,form=None,label=None):
         super().__init__(label=label,style=discord.ButtonStyle.primary)
@@ -158,8 +149,7 @@ class StatsModal(Modal):
                     i["BaseStats"] = [0] * len(i["Stats"])
                     embed = createStatsEmbed(i, self.owner)
                     view = createPageView(i)
-                    reaction= await interaction.response.send_message(embed=embed,ephemeral=True,view=view)
-                    view.set_interaction(reaction)
+                    await interaction.response.send_message(embed=embed,ephemeral=True,view=view)
         elif self.mode == 1:
             stats = []
             for i in self.children:
@@ -170,8 +160,7 @@ class StatsModal(Modal):
                     i["BaseStats"] = stats
                     embed = createStatsEmbed(i, self.owner)
                     view = createPageView(i)
-                    reaction= await interaction.response.send_message(embed=embed,ephemeral=True,view=view)
-                    view.set_interaction(reaction)
+                    await interaction.response.send_message(embed=embed,ephemeral=True,view=view)
 
 
 class FormModal(Modal):
@@ -456,8 +445,7 @@ class FormCommands(commands.Cog):
                         i["ID"] = id
                     view = createPageView(i)
                     embed = createEmbed(i,owner)
-                    interaction = await ctx.respond(embed=embed,view=view, ephemeral=not public)
-                    view.set_interaction(interaction)
+                    await ctx.respond(embed=embed,view=view, ephemeral=not public)
                     break
                 elif userForms.index(i) + 1 == len(userForms):
                     await ctx.respond(
@@ -595,8 +583,7 @@ class FormCommands(commands.Cog):
                     if i['Name'].casefold().startswith(form.casefold()):
                         searchComplete = True
                         view = createPageView(i)
-                        interaction= await ctx.respond(embed=createEmbed(i, owner),view=view,ephemeral=not public)
-                        view.interaction = interaction
+                        await ctx.respond(embed=createEmbed(i, owner),view=view,ephemeral=not public)
                         break
                 if searchComplete:
                     break
