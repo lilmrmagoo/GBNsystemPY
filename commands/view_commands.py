@@ -49,11 +49,5 @@ class ViewCommands(commands.Cog):
         if force == None: await ctx.respond("No force found with that name", ephermal = True)
         await ctx.defer()
         view = force.createPageView("Image")
-        interaction = await ctx.respond(file=force.createInfoScreen(),view = view)
-    @view.command(guild_ids=[*guildids], description='view a force')
-    async def test(self, ctx, name: Option(str,"the name of the force", required=True)):
-        force = Force.searchDatabase(name)
-        if force == None: await ctx.respond("No force found with that name", ephermal = True)
-        await ctx.defer()
-        await ctx.respond(file=force.createMemberScreen())
+        await ctx.respond(file=force.createInfoScreen(),view = view)
         

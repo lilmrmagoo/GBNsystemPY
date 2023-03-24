@@ -95,7 +95,7 @@ class Dev(commands.Cog):
             await ctx.respond("no force found", ephemeral=True)
 
     @dev.command(guild_ids=[*guildids])
-    async def delkey(self, ctx, key: Option(str, 'the users forms to delete')):
+    async def delkey(self, ctx, key: Option(str, 'the db key to delete')):
         del db[key]
         await ctx.respond('key has been deleted', ephemeral=True)
 
@@ -106,9 +106,14 @@ class Dev(commands.Cog):
         for i in dataBaseKeys:
             del db[i]
         await ctx.respond('user has been cleared', ephemeral=True)
-
     @dev.command(guild_ids=[*guildids])
-    async def getkey(self, ctx, owner: Option(
+    async def getkey(self, ctx, key: Option(str, 'the key to get')):
+        value = db[key]
+        for i in value:
+            await ctx.respond(f'key value {i}', ephemeral=True)
+            
+    @dev.command(guild_ids=[*guildids])
+    async def getuserkey(self, ctx, owner: Option(
         discord.Member, 'returns all a users values under their form key')):
         dataBaseKey = str(owner.id) + "'s forms"
         await ctx.respond(str(db[dataBaseKey]), ephemeral=True)

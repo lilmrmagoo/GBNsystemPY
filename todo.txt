@@ -4,6 +4,7 @@
 Make Classes for form
  - add search method to create object from search
 
+make welcome command
 
 add force invite command
 add force invite only mode
@@ -14,8 +15,6 @@ make user eco and rank db
 add to user info page
 
 add stat set/ assign command for custom stats
-
-DONE add buttons for forces to switch between member list and info
 
 WIP add veiw commands for fancy gui.
 DONE-Need to do pillow or other image library research.
