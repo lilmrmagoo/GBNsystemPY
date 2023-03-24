@@ -1,7 +1,7 @@
 
 # GBN SYSTEM Discord Bot
 
-This is a custome discord bot to allow for creating of characters and gundam like info pages for a discord server.
+This is a custom discord bot for creating characters and gundam like info pages for a discord server.
 
 current features
 - slash commands
