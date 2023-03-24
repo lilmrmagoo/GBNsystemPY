@@ -5,6 +5,7 @@ Make Classes for form
  - add search method to create object from search
 
 make welcome command
+make help command
 
 add force invite command
 add force invite only mode
