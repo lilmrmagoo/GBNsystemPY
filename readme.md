@@ -13,5 +13,5 @@ current features
 - commands to add and remove 'members' to forces
 - commands to make force nest pages
 - buttons on forms and forces to switch pages
-- WIP view commands which generate a custome image resembling a game gui. uses the python pillow image generation library, text font size is auto scalled to fit within sections of the image 
+- view commands which generate a custom image resembling a game gui. uses the python pillow image generation library, text font size is auto-scalled to fit within sections of the image 
 
