@@ -1,9 +1,8 @@
-import keepalive
 import discord
 from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
+from dotenv import load_dotenv
 import os
-from replit import db
 from commands.force_commands import ForceCommands
 from commands.form_commands import FormCommands
 from commands.user_commands import UserCommands
@@ -11,12 +10,13 @@ from commands.view_commands import ViewCommands
 from submissions import SubmissionsCog
 from shared import guildIds, adminRoles, validation
 
+load_dotenv()
+
 intents = discord.Intents.default()
 intents.guilds = True
 intents.messages = True
 intents.message_content = True
 
-keepalive.keep_alive()
 bot = discord.Bot(intents=intents)
 token = os.environ['TOKEN']
 guildids = guildIds
@@ -162,5 +162,4 @@ setup(bot)
 try:
     bot.run(token)
 except:
-    os.system("kill 1")
-    os.system("pip install py-cord")
+    print("failed to start bot")
