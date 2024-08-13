@@ -27,7 +27,7 @@ create table if not exists forces (
     role_id text,
     server_id text,
     foreign key(owner) references users(id),
-    foreign key(leader) references forms(id),
+    foreign key(leader) references forms(id)
 );
 create table if not exists force_members(
     id integer primary key,
