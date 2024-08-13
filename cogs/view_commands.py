@@ -2,7 +2,7 @@ import discord
 from discord.commands import SlashCommandGroup, Option
 from discord.ext import commands
 from shared import guildIds
-from commands.force_commands import Force
+from classes.force import Force
 from PIL import Image, ImageDraw, ImageFont
 guildids = guildIds
 
