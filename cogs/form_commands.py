@@ -2,7 +2,6 @@ import discord
 from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
 from discord.ui import InputText, Modal, View, Button
-from replit import db
 from shared import adminRoles, validation, guildIds, Confirm, PageView
 
 guildids = guildIds

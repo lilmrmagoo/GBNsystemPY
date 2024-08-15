@@ -1,3 +1,5 @@
+import discord
+from shared import validation
 class Force:
     def __init__(self,
                  Name: str,

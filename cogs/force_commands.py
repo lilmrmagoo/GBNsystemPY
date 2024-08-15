@@ -2,7 +2,6 @@ import discord
 from discord.commands import SlashCommandGroup, Option
 from discord.ext import commands
 from discord.ui import Modal, InputText, Button
-from replit import db
 from shared import guildIds, validation, adminRoles, PageView, ImageGeneration
 from classes.force import Force
 from classes.force_nest import ForceNest
