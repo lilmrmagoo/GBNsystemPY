@@ -3,13 +3,14 @@ from user import User
 from shared import validation
 import discord
 class Form:
-    def __init__(self,id,owner:User,name:str,type:str,link:str|None,image:str|None,desc:str|None) -> None:
+    def __init__(self,id,user_id:int,name:str,type:str,link:str|None,image:str|None,desc:str|None) -> None:
         if type in ("Gunpla","Character","Other"):
             self.type = type
         else:
             raise Exception("Invalid type for form")
+        self.user = User.GetById(user_id)
         self.id = id
-        self.owner = owner
+        self.user_id = user_id
         self.name = name
         self.link = link
         self.image = image
@@ -40,10 +41,15 @@ class Form:
     def AddToDb(self):
         sql = "insert into forms(user_id,name,link,type,image,desc) values (?,?,?,?,?,?)" 
         with Connection() as db:
-            db.execute(sql, (self.owner.id,self.name,self.link,self.type,self.image,self.desc))
+            db.execute(sql, (self.user_id,self.name,self.link,self.type,self.image,self.desc))
+            return True
+    def updateInDb(self):
+        sql = "update forms set name = ?, link = ?, type = ?, image = ?, desc = ? where id = ?"
+        with Connection as db:
+            db.execute(sql, (self.name, self.link, self.type, self.image, self.desc, self.id))
             return True
     @staticmethod
-    def SearchDBbyName(name,Strict=False):
+    def SearchDbByName(name,Strict=False):
         if Strict:
             sql = "select id,user_id,name,link,type,image,desc from forms where name = ?" 
         else:
@@ -55,8 +61,22 @@ class Form:
             if row is not None:
                 owner = User.searchById(row["user_id"])
                 if owner is not None:
-                    del row["user_id"] #removes it from the row as we give the whole owner object,
-                    return Form(owner=owner, **row)
+                    return Form(**row)
                 else:
                     raise Exception("Form has no owner, Somehow, db shouldn't allow that.")
             else: return None
+    @staticmethod
+    def SearchDbByUser(user_id,max=30):
+        sql = "select id,name,link,type,image,desc from forms where user_id = ? "
+        if max is not None:
+            sql += f"limit {max}"
+        with Connection as db:
+            def form_factory(cursor, row):
+                fields = [column[0] for column in cursor.description]
+                return Form(**{key: value for key, value in zip(fields, row)})
+            db.row_factory = form_factory
+            cursor = db.cursor()
+            cursor.execute(sql,(user_id))
+            forms = cursor.fetchall()
+            return forms
+

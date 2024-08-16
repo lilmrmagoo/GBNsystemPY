@@ -3,6 +3,8 @@ from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
 from discord.ui import InputText, Modal, View, Button
 from shared import adminRoles, validation, guildIds, Confirm, PageView
+from classes.form import Form
+from classes.user import User
 
 guildids = guildIds
 
@@ -91,75 +93,75 @@ class OpenModalButton(Button):
         self.modal = modal
     async def callback(self, interaction:discord.Interaction):
         await interaction.response.send_modal(self.modal)
-class StatsModal(Modal):
-    def __init__(self,template=None,mode=0,form=None,owner=None,*args,**kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        names = ["Stat 1", "Stat 2", "Stat 3", "Stat 4", "Stat 5"]
-        if template == "Basic(Gunpla)":
-            names = ["Mobility", "Armour", "Melee Atk", "Ranged Atk"]
-        elif template == ("Basic(Character)"):
-            names = ["Dexterity","Strength","Inteligence","Charisma","Constitution"]
-        self.mode = mode
-        self.form = form
-        self.owner = owner
-        dataBaseKey = str(owner.id) + "'s forms"
-        userForms = db[dataBaseKey]
-        validform = False
-        if mode == 1:
-            for i in userForms:
-                if i["Name"].casefold().startswith(form.casefold()):
-                    i["Stats"] = names
-                    validform=True
-        if mode == 1 and not validform:
-            return None
-        if mode == 0:
-            for i in range(len(names)):
-                try:
-                    self.add_item(InputText(label=names[i],
-                                  placeholder="Put the name of the stat",
-                                  style=discord.InputTextStyle.short,
-                                  row=i,
-                                  required=False))
-                except:
-                    break
-        elif mode == 1:
-            for i in range(len(names)):
-                try:
-                    self.add_item(
-                        InputText(label=names[i],
-                                  placeholder="Put the value of the stat",
-                                  style=discord.InputTextStyle.short,
-                                  row=i,
-                                  required=False,))
-                except:
-                    break
+# class StatsModal(Modal):
+#     def __init__(self,template=None,mode=0,form=None,owner=None,*args,**kwargs) -> None:
+#         super().__init__(*args, **kwargs)
+#         names = ["Stat 1", "Stat 2", "Stat 3", "Stat 4", "Stat 5"]
+#         if template == "Basic(Gunpla)":
+#             names = ["Mobility", "Armour", "Melee Atk", "Ranged Atk"]
+#         elif template == ("Basic(Character)"):
+#             names = ["Dexterity","Strength","Inteligence","Charisma","Constitution"]
+#         self.mode = mode
+#         self.form = form
+#         self.owner = owner
+#         dataBaseKey = str(owner.id) + "'s forms"
+#         userForms = db[dataBaseKey]
+#         validform = False
+#         if mode == 1:
+#             for i in userForms:
+#                 if i["Name"].casefold().startswith(form.casefold()):
+#                     i["Stats"] = names
+#                     validform=True
+#         if mode == 1 and not validform:
+#             return None
+#         if mode == 0:
+#             for i in range(len(names)):
+#                 try:
+#                     self.add_item(InputText(label=names[i],
+#                                   placeholder="Put the name of the stat",
+#                                   style=discord.InputTextStyle.short,
+#                                   row=i,
+#                                   required=False))
+#                 except:
+#                     break
+#         elif mode == 1:
+#             for i in range(len(names)):
+#                 try:
+#                     self.add_item(
+#                         InputText(label=names[i],
+#                                   placeholder="Put the value of the stat",
+#                                   style=discord.InputTextStyle.short,
+#                                   row=i,
+#                                   required=False,))
+#                 except:
+#                     break
 
-    async def callback(self, interaction: discord.Interaction):
-        dataBaseKey = str(self.owner.id) + "'s forms"
-        userForms = db[dataBaseKey]
-        if self.mode == 0:
-            stats = []
-            for i in self.children:
-                if i.value != None and i.value != "":
-                    stats.append(i.value)
-            for i in userForms:
-                if i["Name"].casefold().startswith(self.form.casefold()):
-                    i["Stats"] = stats
-                    i["BaseStats"] = [0] * len(i["Stats"])
-                    embed = createStatsEmbed(i, self.owner)
-                    view = createPageView(i)
-                    await interaction.response.send_message(embed=embed,ephemeral=True,view=view)
-        elif self.mode == 1:
-            stats = []
-            for i in self.children:
-                if i.value != None:
-                    stats.append(i.value)
-            for i in userForms:
-                if i["Name"].casefold().startswith(self.form.casefold()):
-                    i["BaseStats"] = stats
-                    embed = createStatsEmbed(i, self.owner)
-                    view = createPageView(i)
-                    await interaction.response.send_message(embed=embed,ephemeral=True,view=view)
+#     async def callback(self, interaction: discord.Interaction):
+#         dataBaseKey = str(self.owner.id) + "'s forms"
+#         userForms = db[dataBaseKey]
+#         if self.mode == 0:
+#             stats = []
+#             for i in self.children:
+#                 if i.value != None and i.value != "":
+#                     stats.append(i.value)
+#             for i in userForms:
+#                 if i["Name"].casefold().startswith(self.form.casefold()):
+#                     i["Stats"] = stats
+#                     i["BaseStats"] = [0] * len(i["Stats"])
+#                     embed = createStatsEmbed(i, self.owner)
+#                     view = createPageView(i)
+#                     await interaction.response.send_message(embed=embed,ephemeral=True,view=view)
+#         elif self.mode == 1:
+#             stats = []
+#             for i in self.children:
+#                 if i.value != None:
+#                     stats.append(i.value)
+#             for i in userForms:
+#                 if i["Name"].casefold().startswith(self.form.casefold()):
+#                     i["BaseStats"] = stats
+#                     embed = createStatsEmbed(i, self.owner)
+#                     view = createPageView(i)
+#                     await interaction.response.send_message(embed=embed,ephemeral=True,view=view)
 
 
 class FormModal(Modal):
@@ -224,32 +226,17 @@ class FormModal(Modal):
             self.oldName = oldValues['Name']
 
     async def callback(self, interaction: discord.Interaction):
-        googledoc = self.children[3].value
-        desc = self.children[1].value
-        image = self.children[2].value
-        name = self.children[0].value
         owner = self.owner
-        if not validation.doesKeyExist("IDs"):
-            db["IDs"]= {}
-            IDs = db["IDs"]
-            IDs["LastFormID"] = 0
-        else: 
-            IDs = db["IDs"]
-        id = IDs["LastFormID"] + 1
-        if not self.edit:
-            IDs["LastFormID"] = id
         if owner == None:
             owner = interaction.user
         formtype = self.type
-        dataBaseKey = str(owner.id) + "'s forms"
         dict = {
-            "Name": name,
-            "Link": googledoc,
-            "Form Type": formtype,
-            "Desc": desc,
-            "Image": image
+            "name": self.children[0].value,
+            "link": self.children[3].value,
+            "type": formtype,
+            "desc": self.children[1].value,
+            "image": self.children[2].value
         }
-        userForms = db.get(dataBaseKey)
         if self.edit:
             if "ID" not in dict.keys():
                 IDs["LastFormID"] = id
@@ -264,20 +251,16 @@ class FormModal(Modal):
                         embed=embed,
                         ephemeral=True)
         else:
-            dict["ID"] = id
-            if validation.doesKeyExist(dataBaseKey):
-                userForms.append(dict)
-                db[dataBaseKey] = userForms
-            else:
-                db[dataBaseKey] = [dict]
-            embed = createEmbed(dict, owner)
-            if formtype=="Other":
-                modal = StatsModal(template="Custom",mode=0,form=dict["Name"],owner=owner,title="Name Stats")
-            else:
-                modal = StatsModal(template=f"Basic({formtype})",mode=1,form=dict["Name"],owner=owner,title="Assign Stats")
-            view = View(timeout=300)
-            view.add_item(OpenModalButton(modal=modal,label="Create Stats?"))
-            await interaction.response.send_message(f"{owner}'s {formtype} has been created!",embed=embed,view=view,ephemeral=True)
+            dbUser = User.GetByDiscordId(owner.id)
+            form = Form(user_id=dbUser.id,**dict)
+            embed = form.createEmbed(interaction.guild)
+            # if formtype=="Other":
+            #     modal = StatsModal(template="Custom",mode=0,form=dict["Name"],owner=owner,title="Name Stats")
+            # else:
+            #     modal = StatsModal(template=f"Basic({formtype})",mode=1,form=dict["Name"],owner=owner,title="Assign Stats")
+            # view = View(timeout=300)
+            # view.add_item(OpenModalButton(modal=modal,label="Create Stats?"))
+            await interaction.response.send_message(f"{owner}'s {formtype} has been created!",embed=embed,ephemeral=True)
 
 
 class FormCommands(commands.Cog):
@@ -291,22 +274,21 @@ class FormCommands(commands.Cog):
     @discord.commands.user_command(name="list forms",guild_ids=[*guildids])
     async def list_forms(self, ctx: discord.ApplicationContext,member: discord.Member):
         owner = member
-        dataBaseKey = str(owner.id) + "'s forms"
-        if validation.doesKeyExist(dataBaseKey):
-            userForms = db.get(dataBaseKey)
-            embed = discord.Embed(title=f"{owner}'s forms", color=0x2ca098)
-            gunplas = ' '
-            characters = ' '
-            others = ' '
-            for i in userForms:
-                name = i['Name']
-                if i['Form Type'] == 'Gunpla':
+        userForms = Form.SearchDbByUser(owner.id)
+        embed = discord.Embed(title=f"{owner}'s forms", color=0x2ca098)
+        gunplas = ' '
+        characters = ' '
+        others = ' '
+        if userForms is not None:
+            for form in userForms:
+                name = form.name
+                if form.type == 'Gunpla':
                     gunplas = f'{gunplas}\n{name}'
-                elif i['Form Type'] == 'Character':
+                elif form.type == 'Character':
                     characters = f'{characters}\n{name}'
-                elif i['Form Type'] == 'Other':
+                elif form.type == 'Other':
                     others = f'{others}\n{name}'
-            
+                
             if gunplas != ' ': embed.add_field(name='Gunpla Forms', value=gunplas)
             if characters != ' ': embed.add_field(name='Character Forms', value=characters)
             if others != ' ': embed.add_field(name='Other Forms',value=others,)

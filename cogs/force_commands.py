@@ -362,14 +362,10 @@ class ForceCommands(commands.Cog):
 
     @force.command(guild_ids=[*guildids],
                    description="get the info for a force")
-    async def get(self, ctx, force: Option(
-        str,
-        'the force you want to get. ex: \'build divers\' or \'pizza grubbers\'',
-        required=True), public: Option(
-            bool,
-            "makes the message only visible to you if false, True by default",
-            required=False,
-            default=True)):
+    async def get(self, ctx, 
+                  force: Option(str, 'the force you want to get. ex: \'build divers\' or \'pizza grubbers\'',required=True), 
+                  public: Option(bool, "makes the message only visible to you if false, True by default",required=False, default=True)
+    ):
         if validation.doesKeyExist("Forces"):
             dbForce = Force.searchDatabase(force)
             if dbForce != None:
