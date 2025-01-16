@@ -22,8 +22,8 @@ def getUserRoleRank(member):
     return rank
 def createPageView(user):
     view = PageView(timeout=300.0,disable_on_timeout=True)
-    view.add_item(UserNavButton(user=user,label="Forms",page="forms"))
-    view.add_item(UserNavButton(user=user,label="Info",page="info"))
+    view.add_item(UserNavButton(discordUser=user,label="Forms",page="forms"))
+    view.add_item(UserNavButton(discordUser=user,label="Info",page="info"))
     return view
 def createListEmbed(title, user:User):
     userForms = user.listForms(Form.form_factory)
@@ -49,7 +49,7 @@ def createUserEmbed(discordUser, userData):
     embed.set_thumbnail(url=discordUser.avatar)
     embed.add_field(name="Join Date", value=discordUser.joined_at.strftime("%x"))
     embed.add_field(name="Nickname", value=discordUser.nick)
-    rank = Ranks[userData.rank]
+    rank = userData.rank
     embed.add_field(name="Rank", value=f"{rank}-Rank")
     return embed
 class PageView(View):
@@ -79,9 +79,11 @@ class UserCommands(commands.Cog):
     user = SlashCommandGroup('user',"Commands to view a users info")
 
     @user.command(guild_ids=[*guildids], description='Get A users info')
-    async def get(self,ctx,DiscordUser: Option(discord.Member,"the person who's info you want to get", required=False, default=None)):
+    async def get(self,ctx,user: Option(discord.Member,"the person who's info you want to get", required=False, default=None)):
+        DiscordUser = user
         if DiscordUser == None:
             DiscordUser = ctx.author
+        print(DiscordUser.id, type(DiscordUser.id))
         user = User.GetById(DiscordUser.id)
         view = createPageView(DiscordUser)
         embed = createUserEmbed(DiscordUser,user)

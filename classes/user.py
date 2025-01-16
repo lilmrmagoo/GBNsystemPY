@@ -12,10 +12,10 @@ class User:
             return True
     def listForms(self, factory):
         sql = "select f.id, f.type,f.name from users u inner join forms f on u.id = f.user_id where u.id = ?"
-        with Connection as db:
+        with Connection() as db:
             db.row_factory = factory
             cursor = db.cursor()
-            cursor.execute(sql,(self.id))
+            cursor.execute(sql,(self.id,))
             forms = cursor.fetchall()
             return forms
 
@@ -26,9 +26,9 @@ class User:
             row = None
             while row is None:
                 cursor = db.cursor()
-                cursor.execute(sql, (discord_id))
+                cursor.execute(sql, (discord_id,))
                 row = cursor.fetchone()
                 if row is not None:
                     return User(**row)
                 else:
-                    db.execute("insert into users(id) values (?)", (discord_id))
+                    db.execute("insert into users(id) values (?)", (discord_id,))

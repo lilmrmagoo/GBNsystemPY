@@ -1,7 +1,7 @@
 import discord
 from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
-from dotenv import load_dotenv
+from dotenv import load_dotenv, dotenv_values
 import os
 #from cogs.force_commands import ForceCommands
 from cogs.form_commands import FormCommands
@@ -10,7 +10,7 @@ from cogs.user_commands import UserCommands
 #from cogs.submissions import SubmissionsCog
 from shared import guildIds, adminRoles, validation
 
-load_dotenv()
+config = dotenv_values(".env")
 
 intents = discord.Intents.default()
 intents.guilds = True
@@ -18,7 +18,7 @@ intents.messages = True
 intents.message_content = True
 
 bot = discord.Bot(intents=intents)
-token = os.environ['TOKEN']
+token = config["TOKEN"]
 guildids = guildIds
 
 

@@ -1,5 +1,5 @@
 create table if not exists users (
-    id text primary key,
+    id integer primary key,
     rank text check(rank in ('F','E','D','C','B','A','S','SS')) default 'F',
     money integer default 0,
     rep integer default 0
@@ -7,7 +7,7 @@ create table if not exists users (
 );
 create table if not exists forms (
     id integer primary key,
-    user_id text not null,
+    user_id integer not null,
     name text,
     link text,
     type text check(type in ('Gunpla','Character','Other')),
