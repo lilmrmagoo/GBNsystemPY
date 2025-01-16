@@ -34,9 +34,9 @@ async def on_thread_udate(before, after):
 
 def setup(bot):
     #bot.add_cog(Dev(bot), override=True)
-    bot.add_cog(FormCommands(bot), override=True)
+    #bot.add_cog(FormCommands(bot), override=True)
     #bot.add_cog(ForceCommands(bot), override=True)
-    #bot.add_cog(UserCommands(bot), override=True)
+    bot.add_cog(UserCommands(bot), override=True)
     #bot.add_cog(ViewCommands(bot), override=True)
     #bot.add_cog(SubmissionsCog(bot), override=True)
 

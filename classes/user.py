@@ -9,7 +9,16 @@ class User:
         sql = "insert into users(id,rank, money, rep) (?, COALESCE(?, DEFAULT), COALESCE(?, DEFAULT), COALESCE(?, DEFAULT)" 
         with Connection() as db:
             db.execute(sql, (self.id,self.name,self.rank,self.money,self.rep))
-            return True        
+            return True
+    def listForms(self, factory):
+        sql = "select f.id, f.type,f.name from users u inner join forms f on u.id = f.user_id where u.id = ?"
+        with Connection as db:
+            db.row_factory = factory
+            cursor = db.cursor()
+            cursor.execute(sql,(self.id))
+            forms = cursor.fetchall()
+            return forms
+
     @staticmethod
     def GetById(discord_id):
         sql = "select id, rank, money, rep from users where id = ?"

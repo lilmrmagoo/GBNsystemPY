@@ -49,6 +49,10 @@ class Form:
             db.execute(sql, (self.name, self.link, self.type, self.image, self.desc, self.id))
             return True
     @staticmethod
+    def form_factory(cursor, row):
+        fields = [column[0] for column in cursor.description]
+        return Form(**{key: value for key, value in zip(fields, row)})
+    @staticmethod
     def SearchDbByName(name,Strict=False):
         if Strict:
             sql = "select id,user_id,name,link,type,image,desc from forms where name = ?" 
@@ -71,10 +75,7 @@ class Form:
         if max is not None:
             sql += f"limit {max}"
         with Connection as db:
-            def form_factory(cursor, row):
-                fields = [column[0] for column in cursor.description]
-                return Form(**{key: value for key, value in zip(fields, row)})
-            db.row_factory = form_factory
+            db.row_factory = Form.form_factory
             cursor = db.cursor()
             cursor.execute(sql,(user_id))
             forms = cursor.fetchall()
