@@ -1,5 +1,5 @@
 from connection import Connection
-from user import User
+from classes.user import User
 from shared import validation
 import discord
 class Form:

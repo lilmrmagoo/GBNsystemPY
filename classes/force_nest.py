@@ -1,4 +1,4 @@
-from force import Force
+from classes.force import Force
 
 class ForceNest:
     #if no id is supplied it generates a new one, making a completely different ForceNest

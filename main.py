@@ -3,11 +3,11 @@ from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
 from dotenv import load_dotenv
 import os
-from cogs.force_commands import ForceCommands
+#from cogs.force_commands import ForceCommands
 from cogs.form_commands import FormCommands
 from cogs.user_commands import UserCommands
-from cogs.view_commands import ViewCommands
-from cogs.submissions import SubmissionsCog
+#from cogs.view_commands import ViewCommands
+#from cogs.submissions import SubmissionsCog
 from shared import guildIds, adminRoles, validation
 
 load_dotenv()
