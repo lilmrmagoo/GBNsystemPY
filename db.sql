@@ -3,8 +3,8 @@ create table if not exists users (
     rank text check(rank in ('F','E','D','C','B','A','S','SS')) default 'F',
     money integer default 0,
     rep integer default 0
+
 );
-create unique index idx_users_discord_id on users(discord_id);
 create table if not exists forms (
     id integer primary key,
     user_id text not null,
