@@ -1,4 +1,3 @@
-from replit import db
 import discord
 import discord.ui
 from PIL import Image, ImageDraw, ImageFont
@@ -67,10 +66,6 @@ class validation():
                 if letter not in hexdigits:
                     return False
             return True
-        else: return False
-            
-    def doesKeyExist(key):
-        if db.prefix(key): return True
         else: return False
     def userHasRole(member, roles):
         hasRole = False
