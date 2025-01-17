@@ -41,7 +41,9 @@ class Form:
     def AddToDb(self):
         sql = "insert into forms(user_id,name,link,type,image,desc) values (?,?,?,?,?,?)" 
         with Connection() as db:
-            db.execute(sql, (self.user_id,self.name,self.link,self.type,self.image,self.desc))
+            cursor = db.cursor()
+            cursor.execute(sql, (self.user_id,self.name,self.link,self.type,self.image,self.desc))
+            db.commit()
             return True
     def updateInDb(self):
         sql = "update forms set name = ?, link = ?, type = ?, image = ?, desc = ? where id = ?"
@@ -80,8 +82,9 @@ class Form:
             cursor = db.cursor()
             cursor.execute(sql,(user_id,))
             forms = cursor.fetchall()
+            if forms == []:
+                return None
             if max == 1:
-                print(forms)
                 return forms[0]
             else: return forms
 
@@ -96,8 +99,9 @@ class Form:
             cursor = db.cursor()
             cursor.execute(sql,(user_id,name))
             forms = cursor.fetchall()
+            if forms == []:
+                return None
             if max == 1: 
-                print(forms)
                 return forms[0]
             else: return forms
     @staticmethod

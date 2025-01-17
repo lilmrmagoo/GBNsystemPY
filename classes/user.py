@@ -8,7 +8,9 @@ class User:
     def AddToDb(self):
         sql = "insert into users(id,rank, money, rep) (?, COALESCE(?, DEFAULT), COALESCE(?, DEFAULT), COALESCE(?, DEFAULT)" 
         with Connection() as db:
-            db.execute(sql, (self.id,self.name,self.rank,self.money,self.rep))
+            cursor = db.cursor()
+            cursor.execute(sql, (self.id,self.name,self.rank,self.money,self.rep))
+            db.commit()
             return True
     def listForms(self, factory):
         sql = "select f.id, f.type,f.name from users u inner join forms f on u.id = f.user_id where u.id = ?"
@@ -31,4 +33,6 @@ class User:
                 if row is not None:
                     return User(**row)
                 else:
-                    db.execute("insert into users(id) values (?)", (discord_id,))
+                    cursor = db.cursor()
+                    cursor.execute("insert into users(id) values (?)", (discord_id,))
+                    db.commit()
