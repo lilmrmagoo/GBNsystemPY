@@ -80,7 +80,9 @@ class Form:
             cursor = db.cursor()
             cursor.execute(sql,(user_id,))
             forms = cursor.fetchall()
-            return forms
+            if max == 1: return forms[1]
+            else: return forms
+
     @staticmethod
     def SearchDbByUserAndName(user_id,name,max=30):
         sql = "select id,name,link,type,image,desc from forms where user_id = ? and name like ?"
@@ -92,7 +94,8 @@ class Form:
             cursor = db.cursor()
             cursor.execute(sql,(user_id,name))
             forms = cursor.fetchall()
-            return forms
+            if max == 1: return forms[1]
+            else: return forms
     @staticmethod
     def GetById(id):
         sql = "select id,name,link,type,image,desc from forms where id = ?"
@@ -100,6 +103,6 @@ class Form:
             db.row_factory = Form.form_factory
             cursor = db.cursor()
             cursor.execute(sql,(id,))
-            forms = cursor.fetchall()
+            forms = cursor.fetchone()
             return forms
 
