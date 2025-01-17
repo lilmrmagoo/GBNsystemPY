@@ -299,7 +299,7 @@ class FormCommands(commands.Cog):
     async def create_gunpla(self, ctx: discord.ApplicationContext,member: discord.Member):
         if ctx.author == member or validation.userHasRole(
                 ctx.author, adminRoles):
-            modal = FormModal(title=f"Create a Gunpla form for {member}",
+            modal = FormModal(title=f"Create a Gunpla form",
                               type="Gunpla",
                               owner=member)
             await ctx.send_modal(modal)
@@ -312,7 +312,7 @@ class FormCommands(commands.Cog):
     async def create_character(self, ctx: discord.ApplicationContext,member: discord.Member):
         if ctx.author == member or validation.userHasRole(
                 ctx.author, adminRoles):
-            modal = FormModal(title=f"Create a Character form for {member}",
+            modal = FormModal(title=f"Create a Character form",
                               type="Character",
                               owner=member)
             await ctx.send_modal(modal)
@@ -325,7 +325,7 @@ class FormCommands(commands.Cog):
     async def create_other(self, ctx: discord.ApplicationContext,member: discord.Member):
         if ctx.author == member or validation.userHasRole(
                 ctx.author, adminRoles):
-            modal = FormModal(title=f"Create a Other form for {member}",
+            modal = FormModal(title=f"Create an Other form",
                               type="Other",
                               owner=member)
             await ctx.send_modal(modal)
