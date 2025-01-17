@@ -404,37 +404,17 @@ class FormCommands(commands.Cog):
             by: Option(str, 'the selector used to get the form, default is by name',choices=['Name', 'Id'],required=False,default='Name')
         ):
         print('command get activated')
+        userForm = None
         if owner == None:
             owner = ctx.author
-        dataBaseKey = str(owner.id) + "'s forms"
-        if validation.doesKeyExist(dataBaseKey):
-            userForms = db.get(dataBaseKey)
-            if by == 'Id':
-                selector = "ID"
-            elif by == 'Name':
-                selector = "Name"
-            else:
-                await ctx.respond(
-                    f'no form found with selector:{by} and value:{form}',
-                    ephemeral=True)
-            for i in userForms:
-                if str(i[selector]).casefold().startswith(form.casefold()):
-                    if "ID" not in i.keys():
-                        IDs = db["IDs"]
-                        id = IDs["LastFormID"] + 1
-                        IDs["LastFormID"] = id
-                        i["ID"] = id
-                    view = createPageView(i)
-                    embed = createEmbed(i,owner)
-                    await ctx.respond(embed=embed,view=view, ephemeral=not public)
-                    break
-                elif userForms.index(i) + 1 == len(userForms):
-                    await ctx.respond(
-                        f'no form found with selector: {by} and value: {form} from user: {owner}',
-                        ephemeral=True)
-                    break
+        if by == 'Id':
+            userForm = Form.GetById(form)
+        elif by == 'Name':
+            userForm = Form.SearchDbByUserAndName(owner.id,form,max=1)
+        if userForm is not None:
+            await ctx.respond(embed=userForm.createEmbed(ctx.guild),ephemeral=not public)
         else:
-            await ctx.respond(f'{owner} has no forms', ephemeral=True)
+            await ctx.respond(f'no form found with selector:{by} and value:{form}',ephemeral=True)
         
     @form.command(guild_ids=[*guildids], description="edit the data of a form")
     async def oldedit(
@@ -549,54 +529,37 @@ class FormCommands(commands.Cog):
                      public: Option(bool,"makes the message only visible to you if false, True by default",required=False,default=True)
     ):
         print(f'searching in guild {ctx.guild}...')
-        searchComplete = False
-        keys = db.keys()
-        for j in keys:
-            if j.endswith('forms'):
-                userForms = db.get(j)
-                guild = ctx.guild
-                memberid = j[0:-8]
-                try:
-                    owner = await guild.fetch_member(memberid)
-                except discord.errors.NotFound:
-                    continue
-                for i in userForms:
-                    if i['Name'].casefold().startswith(form.casefold()):
-                        searchComplete = True
-                        view = createPageView(i)
-                        await ctx.respond(embed=createEmbed(i, owner),view=view,ephemeral=not public)
-                        break
-                if searchComplete:
-                    break
-        if not searchComplete:
-            await ctx.respond(f'no form found with name {form}',
-                              ephemeral=not public)
+        userForm = Form.SearchDbByName(form)
+        if userForm is not None:
+            await ctx.respond(embed=userForm.createEmbed(ctx.guild),ephemeral=not public)
+        else:
+            await ctx.respond(f'no form found with name {form}', ephemeral=not public)
 
     @form.command(guild_ids=[*guildids],description="get a list of a users forms")
-    async def list(self, ctx, owner: Option(discord.Member, "the person who's forms you wish to get",required=False,default=None)):
+    async def list(self, ctx, owner: Option(discord.Member, "the person who's forms you wish to get",required=False,default=None),public: Option(bool,"makes the message only visible to you if false, True by default",required=False,default=True)):
         if owner == None:
             owner = ctx.author
-        dataBaseKey = str(owner.id) + "'s forms"
-        if validation.doesKeyExist(dataBaseKey):
-            userForms = db.get(dataBaseKey)
-            embed = discord.Embed(title=f"{owner}'s forms", color=0x2ca098)
-            gunplas = ''
-            characters = ''
-            others = ''
-            for i in userForms:
-                name = i['Name']
-                if i['Form Type'] == 'Gunpla':
+        userForms = Form.SearchDbByUser(owner.id)
+        embed = discord.Embed(title=f"{owner}'s forms", color=0x2ca098)
+        gunplas = ' '
+        characters = ' '
+        others = ' '
+        if userForms is not None:
+            for form in userForms:
+                name = form.name
+                if form.type == 'Gunpla':
                     gunplas = f'{gunplas}\n{name}'
-                elif i['Form Type'] == 'Character':
+                elif form.type == 'Character':
                     characters = f'{characters}\n{name}'
-                elif i['Form Type'] == 'Other':
+                elif form.type == 'Other':
                     others = f'{others}\n{name}'
-            if gunplas != '': embed.add_field(name='Gunpla Forms', value=gunplas)
-            if characters != '': embed.add_field(name='Character Forms', value=characters)
-            if others != '': embed.add_field(name='Other Forms',value=others,)
-            await ctx.respond(embed=embed)
+                
+            if gunplas != ' ': embed.add_field(name='Gunpla Forms', value=gunplas)
+            if characters != ' ': embed.add_field(name='Character Forms', value=characters)
+            if others != ' ': embed.add_field(name='Other Forms',value=others,)
+            await ctx.respond(embed=embed, ephemeral=not public)
         else:
-            await ctx.respond('That user does not have any forms')
+            await ctx.respond('That user does not have any forms', ephemeral=not public)
 
     @stats.command(guild_ids=[*guildids],description="create a stats page for a form", name="create")
     async def create_stats(self, ctx, 

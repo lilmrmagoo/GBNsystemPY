@@ -55,15 +55,15 @@ class Form:
     @staticmethod
     def SearchDbByName(name,Strict=False):
         if Strict:
-            sql = "select id,user_id,name,link,type,image,desc from forms where name = ?" 
+            sql = "select id,user_id,name,link,type,image,desc from forms where name = '?' limit 1" 
         else:
-            sql = "select id,user_id,name,link,type,image,desc from forms where name like ?%"
+            sql = "select id,user_id,name,link,type,image,desc from forms where name like '?%' limit 1"
         with Connection() as db:
             cursor = db.cursor()
             cursor.execute(sql,(name,))
             row = cursor.fetchone()
             if row is not None:
-                owner = User.searchById(row["user_id"])
+                owner = User.GetById(row["user_id"])
                 if owner is not None:
                     return Form(**row)
                 else:
@@ -78,6 +78,26 @@ class Form:
             db.row_factory = Form.form_factory
             cursor = db.cursor()
             cursor.execute(sql,(user_id,))
+            forms = cursor.fetchall()
+            return forms
+    @staticmethod
+    def SearchDbByUserAndName(user_id,name,max=30):
+        sql = "select id,name,link,type,image,desc from forms where user_id = ? and name like '?%' "
+        if max is not None:
+            sql += f"limit {max}"
+        with Connection() as db:
+            db.row_factory = Form.form_factory
+            cursor = db.cursor()
+            cursor.execute(sql,(user_id,name))
+            forms = cursor.fetchall()
+            return forms
+    @staticmethod
+    def GetById(id):
+        sql = "select id,name,link,type,image,desc from forms where id = ?"
+        with Connection() as db:
+            db.row_factory = Form.form_factory
+            cursor = db.cursor()
+            cursor.execute(sql,(id,))
             forms = cursor.fetchall()
             return forms
 
