@@ -55,9 +55,10 @@ class Form:
     @staticmethod
     def SearchDbByName(name,Strict=False):
         if Strict:
-            sql = "select id,user_id,name,link,type,image,desc from forms where name = '?' limit 1" 
+            sql = "select id,user_id,name,link,type,image,desc from forms where name = ? limit 1" 
         else:
-            sql = "select id,user_id,name,link,type,image,desc from forms where name like '?%' limit 1"
+            name += "%"
+            sql = "select id,user_id,name,link,type,image,desc from forms where name like ? limit 1"
         with Connection() as db:
             cursor = db.cursor()
             cursor.execute(sql,(name,))
@@ -82,9 +83,10 @@ class Form:
             return forms
     @staticmethod
     def SearchDbByUserAndName(user_id,name,max=30):
-        sql = "select id,name,link,type,image,desc from forms where user_id = ? and name like '?%' "
+        sql = "select id,name,link,type,image,desc from forms where user_id = ? and name like ?"
+        name += "%"
         if max is not None:
-            sql += f"limit {max}"
+            sql += f" limit {max}"
         with Connection() as db:
             db.row_factory = Form.form_factory
             cursor = db.cursor()
