@@ -45,7 +45,7 @@ class Form:
             return True
     def updateInDb(self):
         sql = "update forms set name = ?, link = ?, type = ?, image = ?, desc = ? where id = ?"
-        with Connection as db:
+        with Connection() as db:
             db.execute(sql, (self.name, self.link, self.type, self.image, self.desc, self.id))
             return True
     @staticmethod
@@ -58,7 +58,7 @@ class Form:
             sql = "select id,user_id,name,link,type,image,desc from forms where name = ?" 
         else:
             sql = "select id,user_id,name,link,type,image,desc from forms where name like ?%"
-        with Connection as db:
+        with Connection() as db:
             cursor = db.cursor()
             cursor.execute(sql,(name))
             row = cursor.fetchone()
@@ -74,7 +74,7 @@ class Form:
         sql = "select id,name,link,type,image,desc from forms where user_id = ? "
         if max is not None:
             sql += f"limit {max}"
-        with Connection as db:
+        with Connection() as db:
             db.row_factory = Form.form_factory
             cursor = db.cursor()
             cursor.execute(sql,(user_id))
