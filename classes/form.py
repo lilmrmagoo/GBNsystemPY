@@ -3,7 +3,7 @@ from classes.user import User
 from shared import validation
 import discord
 class Form:
-    def __init__(self,id,user_id:int,name:str,type:str,link:str|None,image:str|None,desc:str|None) -> None:
+    def __init__(self,user_id:int,name:str,type:str,link:str|None,image:str|None,desc:str|None,id:int|None=None) -> None:
         if type in ("Gunpla","Character","Other"):
             self.type = type
         else:
@@ -19,7 +19,7 @@ class Form:
     async def createEmbed(self,guild:discord.guild):
         inlink = self.link
         inimage = self.image
-        discord_user = await guild.fetch_member(self.owner.discord_id)
+        discord_user = await guild.fetch_member(self.user_id)
         if validation.validGoogleDoc(inlink) or validation.validDiscordLink(
                 inlink):
             link = inlink
@@ -60,7 +60,7 @@ class Form:
             sql = "select id,user_id,name,link,type,image,desc from forms where name like ?%"
         with Connection() as db:
             cursor = db.cursor()
-            cursor.execute(sql,(name))
+            cursor.execute(sql,(name,))
             row = cursor.fetchone()
             if row is not None:
                 owner = User.searchById(row["user_id"])
@@ -77,7 +77,7 @@ class Form:
         with Connection() as db:
             db.row_factory = Form.form_factory
             cursor = db.cursor()
-            cursor.execute(sql,(user_id))
+            cursor.execute(sql,(user_id,))
             forms = cursor.fetchall()
             return forms
 
