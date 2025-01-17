@@ -80,7 +80,9 @@ class Form:
             cursor = db.cursor()
             cursor.execute(sql,(user_id,))
             forms = cursor.fetchall()
-            if max == 1: return forms[1]
+            if max == 1:
+                print(forms)
+                return forms[0]
             else: return forms
 
     @staticmethod
@@ -94,7 +96,9 @@ class Form:
             cursor = db.cursor()
             cursor.execute(sql,(user_id,name))
             forms = cursor.fetchall()
-            if max == 1: return forms[1]
+            if max == 1: 
+                print(forms)
+                return forms[0]
             else: return forms
     @staticmethod
     def GetById(id):
