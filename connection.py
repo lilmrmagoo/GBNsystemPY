@@ -3,6 +3,7 @@ import sqlite3
 class Connection:
     def __init__(self):
         self.conn: Optional[sqlite3.Connection] = None
+        sqlite3.enable_callback_tracebacks(True)
 
     def __enter__(self):
         def dict_factory(cursor, row):
