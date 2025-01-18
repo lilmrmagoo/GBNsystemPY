@@ -39,12 +39,15 @@ class Form:
         #embed = validation.addFieldsToEmbed(dict, embed)
         return embed
     def AddToDb(self):
-        sql = "insert into forms(user_id,name,link,type,image,desc) values (?,?,?,?,?,?)" 
-        with Connection() as db:
-            cursor = db.cursor()
-            cursor.execute(sql, (self.user_id,self.name,self.link,self.type,self.image,self.desc))
-            db.commit()
-            return True
+        try:
+            sql = "insert into forms(user_id,name,link,type,image,desc) values (?,?,?,?,?,?);" 
+            with Connection() as db:
+                cursor = db.cursor()
+                cursor.execute(sql, (self.user_id,self.name,self.link,self.type,self.image,self.desc))
+                db.commit()
+                return True
+        except Exception as e:
+            print(e)
     def updateInDb(self):
         sql = "update forms set name = ?, link = ?, type = ?, image = ?, desc = ? where id = ?"
         with Connection() as db:
