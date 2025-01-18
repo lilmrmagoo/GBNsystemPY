@@ -77,7 +77,7 @@ class Form:
             else: return None
     @staticmethod
     def SearchDbByUser(user_id,max=30):
-        sql = "select id,name,link,type,image,desc from forms where user_id = ? "
+        sql = "select id,user_id,name,link,type,image,desc from forms where user_id = ? "
         if max is not None:
             sql += f"limit {max}"
         with Connection() as db:
@@ -93,7 +93,7 @@ class Form:
 
     @staticmethod
     def SearchDbByUserAndName(user_id,name,max=30):
-        sql = "select id,name,link,type,image,desc from forms where user_id = ? and name like ?"
+        sql = "select id,user_id,name,link,type,image,desc from forms where user_id = ? and name like ?"
         name += "%"
         if max is not None:
             sql += f" limit {max}"
