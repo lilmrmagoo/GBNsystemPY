@@ -253,6 +253,7 @@ class FormModal(Modal):
         else:
             dbUser = User.GetById(owner.id)
             form = Form(user_id=dbUser.id,**dict)
+            form.AddToDb()
             embed = await form.createEmbed(interaction.guild)
             # if formtype=="Other":
             #     modal = StatsModal(template="Custom",mode=0,form=dict["Name"],owner=owner,title="Name Stats")

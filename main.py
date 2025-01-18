@@ -65,9 +65,9 @@ def countKeysWith(dict, type):
     return count
 
 
-#@bot.on_ready()
-#async def on_ready(self):
-#print(f'system online logged in as {self}')
+@bot.listen('on_ready')
+async def on_ready():
+    print(f'system online logged in as {bot.user}')
 class Dev(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
