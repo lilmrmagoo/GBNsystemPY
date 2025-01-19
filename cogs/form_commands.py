@@ -362,7 +362,7 @@ class FormCommands(commands.Cog):
         if view.value == None:
             await interaction.edit_original_response(content=f'Interaction timed out')
         elif view.value:
-            form.deleteFromDb()
+            DBform.deleteFromDb()
             await interaction.edit_original_response(content=f"{DBform.type} Form: {form} deleted by {by}",view=None)
         else:
             await interaction.edit_original_response(content=f'Interaction Canceled')
