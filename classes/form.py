@@ -15,8 +15,36 @@ class Form:
         self.link = link
         self.image = image
         self.desc = desc
-        
-    async def createEmbed(self,guild:discord.guild):
+    def getFields(self, limit:int=50):
+        sql = "select id, field_name, field_data, inline from form_fields where form_id = ?"
+        if limit is not None:
+            sql += f" limit {limit}"
+        with Connection() as db:
+            cursor = db.cursor()
+            cursor.execute(sql, (self.id,))
+            fields = cursor.fetchall()
+            self.fields = fields
+            if fields == []: return None
+            else: return fields
+    def addField(self,name,data,inline):
+        sql = "insert into form_fields(field_name,field_data,inline) values(?,?,?)"
+        with Connection() as db:
+            db.execute(sql,(name,data,inline))
+            db.commit()
+            return True
+    def removeFieldByName(self,name):
+        sql = "delete from form_fields where field_name = ? limit 1"
+        with Connection() as db:
+            db.execute(sql,(name,))
+            db.commit()
+            return True
+    def removeFieldById(self, id):
+        sql = "delete from form_fields where id = ? limit 1"
+        with Connection() as db:
+            db.execute(sql,(id,))
+            db.commit()
+            return True
+    async def createEmbed(self,guild:discord.guild) -> discord.Embed:
         inlink = self.link
         inimage = self.image
         discord_user = await guild.fetch_member(self.user_id)
@@ -29,14 +57,13 @@ class Form:
             image = inimage
         else:
             image = 'https://cdn.discordapp.com/avatars/826265731930128394/ce7d79e6332e54a9a394b42cb182ddf7.png?size=4096'
-        embed = discord.Embed(title=self.name,
-                            url=link,
-                            description=self.desc,
-                            color=0x2ca098)
+        embed = discord.Embed(title=self.name,url=link,description=self.desc,color=0x2ca098)
         embed.set_author(name=f"{discord_user}'s", icon_url=discord_user.display_avatar)
         embed.set_thumbnail(url=image)
-        embed.set_footer(text=self.id)
-        #embed = validation.addFieldsToEmbed(dict, embed)
+        embed.set_footer(text=f"ID:{self.id}")
+        self.getFields()
+        for field in self.fields:
+            embed.add_field(name=field['field_name'], value=field['field_data'], inline=field['inline'])
         return embed
     def AddToDb(self):
         sql = "insert into forms(user_id, name, link, type, image, desc) values (?,?,?,?,?,?)"
@@ -65,11 +92,11 @@ class Form:
             db.commit()
             return True
     @staticmethod
-    def form_factory(cursor, row):
+    def form_factory(cursor, row) -> 'Form':
         fields = [column[0] for column in cursor.description]
         return Form(**{key: value for key, value in zip(fields, row)})
     @staticmethod
-    def SearchDbByName(name,Strict=False):
+    def SearchDbByName(name,Strict=False) -> 'Form':
         if Strict:
             sql = "select id,user_id,name,link,type,image,desc from forms where name = ? limit 1" 
         else:
@@ -87,10 +114,10 @@ class Form:
                     raise Exception("Form has no owner, Somehow, db shouldn't allow that.")
             else: return None
     @staticmethod
-    def SearchDbByUser(user_id,max=30):
+    def SearchDbByUser(user_id,limit:int=30)-> list['Form'] | 'Form' | None:
         sql = "select id,user_id,name,link,type,image,desc from forms where user_id = ? "
-        if max is not None:
-            sql += f"limit {max}"
+        if limit is not None:
+            sql += f"limit {limit}"
         with Connection() as db:
             db.row_factory = Form.form_factory
             cursor = db.cursor()
@@ -98,16 +125,16 @@ class Form:
             forms = cursor.fetchall()
             if forms == []:
                 return None
-            if max == 1:
+            if limit == 1:
                 return forms[0]
             else: return forms
 
     @staticmethod
-    def SearchDbByUserAndName(user_id,name,max=30):
+    def SearchDbByUserAndName(user_id,name,limit:int=30) -> list['Form']| 'Form' | None:
         sql = "select id,user_id,name,link,type,image,desc from forms where user_id = ? and name like ?"
         name += "%"
-        if max is not None:
-            sql += f" limit {max}"
+        if limit is not None:
+            sql += f" limit {limit}"
         with Connection() as db:
             db.row_factory = Form.form_factory
             cursor = db.cursor()
@@ -115,11 +142,11 @@ class Form:
             forms = cursor.fetchall()
             if forms == []:
                 return None
-            if max == 1: 
+            if limit == 1: 
                 return forms[0]
             else: return forms
     @staticmethod
-    def GetById(id):
+    def GetById(id) -> 'Form' | None:
         sql = "select id,name,link,type,image,desc from forms where id = ?"
         with Connection() as db:
             db.row_factory = Form.form_factory

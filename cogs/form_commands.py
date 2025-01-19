@@ -363,7 +363,7 @@ class FormCommands(commands.Cog):
             await interaction.edit_original_response(content=f'Interaction timed out')
         elif view.value:
             DBform.deleteFromDb()
-            await interaction.edit_original_response(content=f"{DBform.type} Form: {form} deleted by {by}",view=None)
+            await interaction.edit_original_response(content=f"{DBform.type} Form: {form} deleted by {ctx.author}",view=None)
         else:
             await interaction.edit_original_response(content=f'Interaction Canceled')
         if DBform is None:
@@ -382,7 +382,7 @@ class FormCommands(commands.Cog):
         if by == 'Id':
             userForm = Form.GetById(form)
         elif by == 'Name':
-            userForm = Form.SearchDbByUserAndName(owner.id,form,max=1)
+            userForm = Form.SearchDbByUserAndName(owner.id,form,limit=1)
         if userForm is not None:
             await ctx.respond(embed= await userForm.createEmbed(ctx.guild),ephemeral=not public)
         else:
@@ -400,9 +400,10 @@ class FormCommands(commands.Cog):
         fieldname: Option(str,'the name of the field',required=True),
         fielddata: Option(str, 'the data for the field', required=True),
         form: Option(str, "the form to add the field to", required=True),
-        inline: Option(bool,"will make the field apear to the left of the previous one",required=True),
+        inline: Option(bool,"will make the field apear to the right of the previous one",required=True),
         owner: Option(discord.Member,"the owner of the form requires perms",required=False,default=None), 
-        by: Option(str,"what to search by",choices=["Name", 'Id'],required=False,default='Name')):
+        by: Option(str,"what to search by",choices=["Name", 'Id'],required=False,default='Name')
+    ):
         if owner == None:
             owner = ctx.author
         elif validation.userHasRole(ctx.author, adminRoles) != True:
@@ -410,25 +411,24 @@ class FormCommands(commands.Cog):
                 "You do not have permission to edit someone else's forms.",
                 ephemeral=True)
             return
-        dataBaseKey = str(owner.id) + "'s forms"
-        userForms = db[dataBaseKey]
-        if inline == True:
-            fieldname = fieldname + '#INLINE'
-        if by == 'Name':
-            for i in userForms:
-                if i['Name'].casefold().startswith(form.casefold()):
-                    name = fieldname.strip('#INLINE')
-                    index = userForms.index(i)
-                    userForms[index][fieldname] = fielddata
-                    await ctx.respond(
-                        f'{fielddata} added to {name} in {i["Name"]}',
-                        ephemeral=True)
-                    break
+        dbForm = None
+        if by == 'Id':
+            dbForm = Form.GetById(form)
+        elif by == 'Name':
+            dbForm = Form.SearchDbByUserAndName(owner.id,form)
+        if dbForm is not None:
+            dbForm.addField(fieldname,fielddata,inline)   
+            await ctx.respond(f'field added to form',ephemeral=True, embed=await dbForm.createEmbed())
+        else:
+            await ctx.respond(f"could not find '{form}' by {by}",ephemeral=True)
 
     @form.command(guild_ids=[*guildids])
-    async def removefield(self, ctx, fieldname: Option(str,'the name of the field',required=True),
-                          form: Option(str,"the form to add the field to",required=True),
-                          owner: Option(discord.Member,"the owner of the form requires perms",required=False,default=None)):
+    async def removefield(self, ctx, 
+        fieldname: Option(str,'the name of the field',required=True),
+        form: Option(str,"the form to add the field to",required=True),
+        owner: Option(discord.Member,"the owner of the form requires perms",required=False,default=None),
+        by: Option(str,"what to search by",choices=["Name", 'Id'],required=False,default='Name')
+    ):
         if owner == None:
             owner = ctx.author
         elif validation.userHasRole(ctx.author, adminRoles) != True:
@@ -436,26 +436,20 @@ class FormCommands(commands.Cog):
                 "You do not have permission to edit someone else's forms.",
                 ephemeral=True)
             return
-        dataBaseKey = str(owner.id) + "'s forms"
-        userForms = db[dataBaseKey]
-        for i in userForms:
-            if i['Name'].casefold().startswith(form.casefold()):
-                index = userForms.index(i)
-                inlineField = fieldname + '#INLINE'
-                if userForms[index][fieldname] in userForms[index]:
-                    del userForms[index][fieldname]
-                    await ctx.respond(f"field {fieldname} removed from {form}")
-                elif userForms[index][inlineField] in userForms[index]:
-                    del userForms[index][inlineField]
-                    await ctx.respond(f"field {fieldname} removed from {form}")
-                else:
-                    await ctx.respon * (
-                        f'no field found with name {fieldname}')
-
+        dbForm = None
+        if by == 'Id':
+            dbForm = Form.GetById(form)
+        elif by == 'Name':
+            dbForm = Form.SearchDbByUserAndName(owner.id,form)
+        if dbForm is not None:
+            dbForm.removeFieldByName(fieldname)   
+            await ctx.respond(f'field removed from form',ephemeral=True, embed=await dbForm.createEmbed())
+        else:
+            await ctx.respond(f"could not find '{form}' by {by}",ephemeral=True)
     @form.command(guild_ids=[*guildids],description="find a character or gunpla")
     async def search(self, ctx, 
-                     form: Option(str,'the form you want to get. ex: \'My gundam\' or \'my character\'',required=True), 
-                     public: Option(bool,"makes the message only visible to you if false, True by default",required=False,default=True)
+        form: Option(str,'the form you want to get. ex: \'My gundam\' or \'my character\'',required=True), 
+        public: Option(bool,"makes the message only visible to you if false, True by default",required=False,default=True)
     ):
         print(f'searching in guild {ctx.guild}...')
         userForm = Form.SearchDbByName(form)

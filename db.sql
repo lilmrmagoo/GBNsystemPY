@@ -15,6 +15,14 @@ create table if not exists forms (
     desc text,
     foreign key(user_id) references users(id)
 );
+create table if not exists form_fields (
+    id integer primary key,
+    form_id integer not null,
+    field_name text not null,
+    field_data text,
+    inline boolean,
+    foreign key(form_id) references forms(id)
+)
 create table if not exists forces (
     id integer primary key,
     owner integer not null,
