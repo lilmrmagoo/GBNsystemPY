@@ -1,7 +1,7 @@
 import sqlite3
 import os
-if os.path.exists("GBN.db"):
-  os.remove("GBN.db")
+#if os.path.exists("GBN.db"):
+  #os.remove("GBN.db")
 with open('db.sql', 'r') as sql_file:
     sql_script = sql_file.read()
 

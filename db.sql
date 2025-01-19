@@ -22,7 +22,7 @@ create table if not exists form_fields (
     field_data text,
     inline boolean,
     foreign key(form_id) references forms(id)
-)
+);
 create table if not exists forces (
     id integer primary key,
     owner integer not null,

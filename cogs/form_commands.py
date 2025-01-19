@@ -415,10 +415,10 @@ class FormCommands(commands.Cog):
         if by == 'Id':
             dbForm = Form.GetById(form)
         elif by == 'Name':
-            dbForm = Form.SearchDbByUserAndName(owner.id,form)
+            dbForm = Form.SearchDbByUserAndName(owner.id,form,1)
         if dbForm is not None:
             dbForm.addField(fieldname,fielddata,inline)   
-            await ctx.respond(f'field added to form',ephemeral=True, embed=await dbForm.createEmbed())
+            await ctx.respond(f'field added to form',ephemeral=True, embed=await dbForm.createEmbed(ctx.guild))
         else:
             await ctx.respond(f"could not find '{form}' by {by}",ephemeral=True)
 
@@ -440,10 +440,10 @@ class FormCommands(commands.Cog):
         if by == 'Id':
             dbForm = Form.GetById(form)
         elif by == 'Name':
-            dbForm = Form.SearchDbByUserAndName(owner.id,form)
+            dbForm = Form.SearchDbByUserAndName(owner.id,form,1)
         if dbForm is not None:
             dbForm.removeFieldByName(fieldname)   
-            await ctx.respond(f'field removed from form',ephemeral=True, embed=await dbForm.createEmbed())
+            await ctx.respond(f'field removed from form',ephemeral=True, embed=await dbForm.createEmbed(ctx.guild))
         else:
             await ctx.respond(f"could not find '{form}' by {by}",ephemeral=True)
     @form.command(guild_ids=[*guildids],description="find a character or gunpla")

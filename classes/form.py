@@ -28,9 +28,9 @@ class Form:
             if fields == []: return None
             else: return fields
     def addField(self,name,data,inline):
-        sql = "insert into form_fields(field_name,field_data,inline) values(?,?,?)"
+        sql = "insert into form_fields(form_id,field_name,field_data,inline) values(?,?,?,?)"
         with Connection() as db:
-            db.execute(sql,(name,data,inline))
+            db.execute(sql,(self.id,name,data,inline))
             db.commit()
             return True
     def removeFieldByName(self,name):
