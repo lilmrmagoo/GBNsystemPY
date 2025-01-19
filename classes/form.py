@@ -147,7 +147,7 @@ class Form:
                 return forms[0]
             else: return forms
     @staticmethod
-    def GetById(id) -> 'Form' | None:
+    def GetById(id) -> Union['Form',None]:
         sql = "select id,name,link,type,image,desc from forms where id = ?"
         with Connection() as db:
             db.row_factory = Form.form_factory
