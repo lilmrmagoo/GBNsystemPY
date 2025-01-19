@@ -126,8 +126,8 @@ class Form:
             forms = cursor.fetchall()
             if forms == []:
                 return None
-            if limit == 1[
-    ,  retu]rn forms[0]
+            if limit == 1:
+                return forms[0]
             else: return forms
 
     @staticmethod
