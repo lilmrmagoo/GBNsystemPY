@@ -244,7 +244,7 @@ class FormModal(Modal):
             oldForm.desc = self.children[1].value
             oldForm.image = self.children[2].value
             oldForm.updateInDb()
-            embed = oldForm.createEmbed(interaction.guild)
+            embed = await oldForm.createEmbed(interaction.guild)
             await interaction.response.send_message(f"{owner}'s {formtype} has been edited!", embed=embed, ephemeral=True)
         else:
             dbUser = User.GetById(owner.id)
@@ -396,7 +396,7 @@ class FormCommands(commands.Cog):
         elif by == 'Name':
             userForm = Form.SearchDbByUserAndName(owner.id,form,max=1)
         if userForm is not None:
-            await ctx.respond(embed=userForm.createEmbed(ctx.guild),ephemeral=not public)
+            await ctx.respond(embed= await userForm.createEmbed(ctx.guild),ephemeral=not public)
         else:
             await ctx.respond(f'no form found with selector:{by} and value:{form}',ephemeral=True)    
     @form.command(guild_ids=[*guildids], description="edit the data of a form")
@@ -472,7 +472,7 @@ class FormCommands(commands.Cog):
         print(f'searching in guild {ctx.guild}...')
         userForm = Form.SearchDbByName(form)
         if userForm is not None:
-            await ctx.respond(embed=userForm.createEmbed(ctx.guild),ephemeral=not public)
+            await ctx.respond(embed= await userForm.createEmbed(ctx.guild),ephemeral=not public)
         else:
             await ctx.respond(f'no form found with name {form}', ephemeral=not public)
 
