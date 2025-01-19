@@ -350,23 +350,23 @@ class FormCommands(commands.Cog):
                 "You do not have permission to delete someone else's forms.",
                 ephemeral=True)
             return
-        form = None
+        DBform = None
         if by == 'Id':
-            form = Form.GetById(form)
+            DBform = Form.GetById(form)
         elif by == 'Name':
-            form = Form.SearchDbByUserAndName(owner.id,form,1)
+            DBform = Form.SearchDbByUserAndName(owner.id,form,1)
         view = Confirm()
-        await ctx.send_response(f"Are you sure you want to delete the form {form.name}?", view=view,embed= await form.createEmbed(ctx.guild), ephemeral=True, delete_after=240.0)
+        await ctx.send_response(f"Are you sure you want to delete the form {DBform.name}?", view=view,embed= await DBform.createEmbed(ctx.guild), ephemeral=True, delete_after=240.0)
         await view.wait()
         interaction = view.interaction
         if view.value == None:
             await interaction.edit_original_response(content=f'Interaction timed out')
         elif view.value:
             form.deleteFromDb()
-            await interaction.edit_original_response(content=f"{formtype} Form: {form} deleted by {by}",view=None)
+            await interaction.edit_original_response(content=f"{DBform.type} Form: {form} deleted by {by}",view=None)
         else:
             await interaction.edit_original_response(content=f'Interaction Canceled')
-        if not validform:
+        if DBform is None:
             await ctx.respond(f'form {form} not found',ephemeral=True)
     @form.command(guild_ids=[*guildids],description="get someone's character or gunpla")
     async def get(self, ctx, 
