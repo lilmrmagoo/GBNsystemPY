@@ -350,34 +350,22 @@ class FormCommands(commands.Cog):
                 "You do not have permission to delete someone else's forms.",
                 ephemeral=True)
             return
+        form = None
         if by == 'Id':
-                form = Form.GetById(form)
-                view = Confirm()
-                ctx.respond(f"Are you sure you want to delete the form {form.name}?", view=view, ephemeral=True,delete_after=240.0)
-                await view.wait()
-                interaction = view.interaction
-                if view.value == None:
-                    await interaction.edit_original_response(content='Timed out')
-                    return
-                elif view.value:
-                    form.deleteFromDB()
-                    await interaction.edit_original_response(content=f"{form.type} Form: {form} deleted by {by}",view=None)
-                    return
-                else:
-                    await interaction.edit_original_response(content=f'Canceled')
+            form = Form.GetById(form)
         elif by == 'Name':
             form = Form.SearchDbByUserAndName(owner.id,form,1)
-            view = Confirm()
-            await ctx.send_response(f"Are you sure you want to delete the form {form.name}?", view=view,embed= await form.createEmbed(ctx.guild), ephemeral=True, delete_after=240.0)
-            await view.wait()
-            interaction = view.interaction
-            if view.value == None:
-                await interaction.edit_original_response(content=f'Interaction timed out')
-            elif view.value:
-                form.deleteFromDb()
-                await interaction.edit_original_response(content=f"{formtype} Form: {form} deleted by {by}",view=None)
-            else:
-                await interaction.edit_original_response(content=f'Interaction Canceled')
+        view = Confirm()
+        await ctx.send_response(f"Are you sure you want to delete the form {form.name}?", view=view,embed= await form.createEmbed(ctx.guild), ephemeral=True, delete_after=240.0)
+        await view.wait()
+        interaction = view.interaction
+        if view.value == None:
+            await interaction.edit_original_response(content=f'Interaction timed out')
+        elif view.value:
+            form.deleteFromDb()
+            await interaction.edit_original_response(content=f"{formtype} Form: {form} deleted by {by}",view=None)
+        else:
+            await interaction.edit_original_response(content=f'Interaction Canceled')
         if not validform:
             await ctx.respond(f'form {form} not found',ephemeral=True)
     @form.command(guild_ids=[*guildids],description="get someone's character or gunpla")

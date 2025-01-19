@@ -25,7 +25,7 @@ class Form:
             link = inlink
         else:
             link = 'https://discord.com/channels/479493485037355022/591348299752013837/917927502872215552'
-        if inimage.startswith('http'):
+        if inimage.startswith('http') and inimage is not None:
             image = inimage
         else:
             image = 'https://cdn.discordapp.com/avatars/826265731930128394/ce7d79e6332e54a9a394b42cb182ddf7.png?size=4096'
