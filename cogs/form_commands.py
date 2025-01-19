@@ -165,7 +165,7 @@ class OpenModalButton(Button):
 
 
 class FormModal(Modal):
-    def __init__(self,type=None,oldValues=None,owner=None,edit=False,*args,**kwargs) -> None:
+    def __init__(self,type=None,oldForm:Form=None,owner=None,edit=False,*args,**kwargs) -> None:
         self.owner = owner
         self.edit = edit
         self.type = type
@@ -201,20 +201,20 @@ class FormModal(Modal):
                           placeholder="Put the name here",
                           style=discord.InputTextStyle.short,
                           row=0,
-                          value=oldValues['Name']))
+                          value=oldForm.name))
             self.add_item(
                 InputText(label="Description",
                           placeholder="describe the form here",
                           style=discord.InputTextStyle.long,
                           row=1,
-                          value=oldValues['Desc']))
+                          value=oldForm.desc))
             self.add_item(
                 InputText(label="Image",
                           placeholder="put a link to an image here",
                           style=discord.InputTextStyle.short,
                           row=2,
                           required=False,
-                          value=oldValues['Image']))
+                          value=oldForm.image))
             self.add_item(
                 InputText(
                     label="Document",
@@ -222,8 +222,8 @@ class FormModal(Modal):
                     "put a link to a google doc or discord message link here",
                     style=discord.InputTextStyle.short,
                     row=3,
-                    value=oldValues['Link']))
-            self.oldName = oldValues['Name']
+                    value=oldForm.link))
+            self.oldForm = oldForm
 
     async def callback(self, interaction: discord.Interaction):
         owner = self.owner
@@ -238,18 +238,14 @@ class FormModal(Modal):
             "image": self.children[2].value
         }
         if self.edit:
-            if "ID" not in dict.keys():
-                IDs["LastFormID"] = id
-                dict["ID"] = id
-            for i in userForms:
-                if i['Name'] == self.oldName:
-                    index = userForms.index(i)
-                    userForms[index] = dict
-                    embed = createEmbed(dict, owner)
-                    await interaction.response.send_message(
-                        f"{owner}'s {formtype} has been edited!",
-                        embed=embed,
-                        ephemeral=True)
+            oldForm = self.oldForm
+            oldForm.name = self.children[0].value
+            oldForm.link = self.children[3].value
+            oldForm.desc = self.children[1].value
+            oldForm.image = self.children[2].value
+            oldForm.updateInDb()
+            embed = oldForm.createEmbed(interaction.guild)
+            await interaction.response.send_message(f"{owner}'s {formtype} has been edited!", embed=embed, ephemeral=True)
         else:
             dbUser = User.GetById(owner.id)
             form = Form(user_id=dbUser.id,**dict)
@@ -354,47 +350,34 @@ class FormCommands(commands.Cog):
                 "You do not have permission to delete someone else's forms.",
                 ephemeral=True)
             return
-        dataBaseKey = str(owner.id) + "'s forms"
-        userForms = db[dataBaseKey]
-        validform=False
         if by == 'Id':
-            for i in userForms:
-                if userForms.index(i) == form:
-                    validform=True
-                    name = i["Name"]
-                    formtype = i["Form Type"]
-                    view = Confirm()
-                    ctx.respond(f"Are you sure you want to delete the form {name}?", view=view, ephemeral=True,delete_after=240.0)
-                    await view.wait()
-                    interaction = view.interaction
-                    if view.value == None:
-                        await interaction.edit_original_response(content='Timed out')
-                        break
-                    elif view.value:
-                        userForms.remove(i)
-                        await interaction.edit_original_response(content=f"{formtype} Form: {form} deleted by {by}",view=None)
-                        break
-                    else:
-                        await interaction.edit_original_response(content=f'Canceled')
+                form = Form.GetById(form)
+                view = Confirm()
+                ctx.respond(f"Are you sure you want to delete the form {form.name}?", view=view, ephemeral=True,delete_after=240.0)
+                await view.wait()
+                interaction = view.interaction
+                if view.value == None:
+                    await interaction.edit_original_response(content='Timed out')
+                    return
+                elif view.value:
+                    form.deleteFromDB()
+                    await interaction.edit_original_response(content=f"{form.formtype} Form: {form} deleted by {by}",view=None)
+                    return
+                else:
+                    await interaction.edit_original_response(content=f'Canceled')
         elif by == 'Name':
-            for i in userForms:
-                if i['Name'].casefold().startswith(form.casefold()):
-                    validform=True
-                    name = i["Name"]
-                    formtype = i["Form Type"]
-                    view = Confirm()
-                    await ctx.send_response(f"Are you sure you want to delete the form {name}?", view=view, ephemeral=True, delete_after=240.0)
-                    await view.wait()
-                    interaction = view.interaction
-                    if view.value == None:
-                        await interaction.edit_original_response(content=f'Interaction timed out')
-                        break
-                    elif view.value:
-                        userForms.remove(i)
-                        await interaction.edit_original_response(content=f"{formtype} Form: {form} deleted by {by}",view=None)
-                        break
-                    else:
-                        await interaction.edit_original_response(content=f'Interaction Canceled')
+            form = Form.SearchDbByUserAndName(owner.id,form,1)
+            view = Confirm()
+            await ctx.send_response(f"Are you sure you want to delete the form {form.name}?", view=view, ephemeral=True, delete_after=240.0)
+            await view.wait()
+            interaction = view.interaction
+            if view.value == None:
+                await interaction.edit_original_response(content=f'Interaction timed out')
+            elif view.value:
+                form.deleteFromDb()
+                await interaction.edit_original_response(content=f"{formtype} Form: {form} deleted by {by}",view=None)
+            else:
+                await interaction.edit_original_response(content=f'Interaction Canceled')
         if not validform:
             await ctx.respond(f'form {form} not found',ephemeral=True)
     @form.command(guild_ids=[*guildids],description="get someone's character or gunpla")
@@ -415,58 +398,15 @@ class FormCommands(commands.Cog):
         if userForm is not None:
             await ctx.respond(embed=userForm.createEmbed(ctx.guild),ephemeral=not public)
         else:
-            await ctx.respond(f'no form found with selector:{by} and value:{form}',ephemeral=True)
-        
-    @form.command(guild_ids=[*guildids], description="edit the data of a form")
-    async def oldedit(
-        self, ctx, form: Option(str,'the form you want to get. ex: \'My gundam\' or \'my character\'',required=True),
-        inputfield: Option(str,'the field you want to edit',choices=["Name", "Link", "Desc", "Image", "Type"],required=True),
-        inputdata: Option(str,'the data you want to set the input field to',required=True),
-        by: Option(str,'the selector used to get the form',choices=['Name', 'Id'],required=False,default='Name'),
-        owner: Option(discord.Member,'the owner of the form. deafult is command activator',required=False,default=None)):
-        if owner == None:
-            owner = ctx.author
-        elif validation.userHasRole(ctx.author, adminRoles) != True:
-            ctx.respond(
-                "You do not have permission to edit someone else's forms.",
-                ephemeral=True)
-            return
-        dataBaseKey = str(owner.id) + "'s forms"
-        userForms = db[dataBaseKey]
-        if by == 'Id':
-            for i in userForms:
-                if userForms.index(i) == form:
-                    index = userForms.index(i)
-                    userForms[index][inputfield] = inputdata
-                    await ctx.respond(
-                        f'{inputfield} changed to {inputdata} on id: {userForms.index(i)}',
-                        ephemeral=True)
-                    break
-        elif by == 'Name':
-            for i in userForms:
-                if i['Name'].casefold().startswith(form.casefold()):
-                    index = userForms.index(i)
-                    userForms[index][inputfield] = inputdata
-                    await ctx.respond(
-                        f'{inputfield} changed to {inputdata} on {i["Name"]}',
-                        ephemeral=True)
-                    break
-
+            await ctx.respond(f'no form found with selector:{by} and value:{form}',ephemeral=True)    
     @form.command(guild_ids=[*guildids], description="edit the data of a form")
     async def edit(self, ctx, form: Option(str,"the form to edit",required=True)):
-        dataBaseKey = str(ctx.author.id) + "'s forms"
-        userForms = db[dataBaseKey]
-        validform=False
-        for i in userForms:
-            if i['Name'].casefold().startswith(form.casefold()):
-                validform=True
-                modal = FormModal(title=f"Edit your {i['Name']} Form",
-                                  edit=True,
-                                  oldValues=i,
-                                  type=i['Form Type'])
-                await ctx.send_modal(modal)
-        if not validform:
+        form = Form.SearchDbByUserAndName(ctx.author.id,form,1)
+        if form is None:
             await ctx.respond(f"no form found with name {form}", ephemeral=True)
+            return
+        modal = FormModal(title=f"Edit your {form.name} Form", edit=True, oldForm=form,type=form.type)
+        await ctx.send_modal(modal)
     @form.command(guild_ids=[*guildids])
     async def addfield(self, ctx, 
         fieldname: Option(str,'the name of the field',required=True),

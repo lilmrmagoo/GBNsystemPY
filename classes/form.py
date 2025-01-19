@@ -43,11 +43,8 @@ class Form:
         try:
             with Connection() as db:
                 cursor = db.cursor()
-                print("Executing SQL:", sql)
-                print("With values:", self.user_id, self.name, self.link, self.type, self.image, self.desc)
                 cursor.execute(sql, (self.user_id, self.name, self.link, self.type, self.image, self.desc))
                 db.commit()
-                print("Insert successful")
                 cursor.execute("SELECT * FROM forms WHERE user_id = ? AND name = ?", (self.user_id, self.name))
                 result = cursor.fetchone()
                 print("Inserted record:", result)
@@ -59,6 +56,13 @@ class Form:
         sql = "update forms set name = ?, link = ?, type = ?, image = ?, desc = ? where id = ?"
         with Connection() as db:
             db.execute(sql, (self.name, self.link, self.type, self.image, self.desc, self.id))
+            db.commit()
+            return True
+    def deleteFromDB(self):
+        sql = "delete from forms where id = ?"
+        with Connection as db:
+            db.execute(sql, (self.id,))
+            db.commit()
             return True
     @staticmethod
     def form_factory(cursor, row):
