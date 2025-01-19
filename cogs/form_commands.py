@@ -361,14 +361,14 @@ class FormCommands(commands.Cog):
                     return
                 elif view.value:
                     form.deleteFromDB()
-                    await interaction.edit_original_response(content=f"{form.formtype} Form: {form} deleted by {by}",view=None)
+                    await interaction.edit_original_response(content=f"{form.type} Form: {form} deleted by {by}",view=None)
                     return
                 else:
                     await interaction.edit_original_response(content=f'Canceled')
         elif by == 'Name':
             form = Form.SearchDbByUserAndName(owner.id,form,1)
             view = Confirm()
-            await ctx.send_response(f"Are you sure you want to delete the form {form.name}?", view=view, ephemeral=True, delete_after=240.0)
+            await ctx.send_response(f"Are you sure you want to delete the form {form.name}?", view=view,embed= await form.createEmbed(ctx.guild), ephemeral=True, delete_after=240.0)
             await view.wait()
             interaction = view.interaction
             if view.value == None:

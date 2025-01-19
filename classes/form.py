@@ -58,9 +58,9 @@ class Form:
             db.execute(sql, (self.name, self.link, self.type, self.image, self.desc, self.id))
             db.commit()
             return True
-    def deleteFromDB(self):
+    def deleteFromDb(self):
         sql = "delete from forms where id = ?"
-        with Connection as db:
+        with Connection() as db:
             db.execute(sql, (self.id,))
             db.commit()
             return True
