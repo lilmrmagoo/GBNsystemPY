@@ -1,6 +1,7 @@
 from connection import Connection
 from classes.user import User
 from shared import validation
+from typing import Union
 import discord
 class Form:
     def __init__(self,user_id:int,name:str,type:str,link:str|None,image:str|None,desc:str|None,id:int|None=None) -> None:
@@ -114,7 +115,7 @@ class Form:
                     raise Exception("Form has no owner, Somehow, db shouldn't allow that.")
             else: return None
     @staticmethod
-    def SearchDbByUser(user_id,limit:int=30)-> list['Form'] | 'Form' | None:
+    def SearchDbByUser(user_id,limit:int=30)-> Union[list['Form'],'Form'] | None:
         sql = "select id,user_id,name,link,type,image,desc from forms where user_id = ? "
         if limit is not None:
             sql += f"limit {limit}"
@@ -125,12 +126,12 @@ class Form:
             forms = cursor.fetchall()
             if forms == []:
                 return None
-            if limit == 1:
-                return forms[0]
+            if limit == 1[
+    ,  retu]rn forms[0]
             else: return forms
 
     @staticmethod
-    def SearchDbByUserAndName(user_id,name,limit:int=30) -> list['Form']| 'Form' | None:
+    def SearchDbByUserAndName(user_id,name,limit:int=30) -> Union[list['Form'],'Form'] | None:
         sql = "select id,user_id,name,link,type,image,desc from forms where user_id = ? and name like ?"
         name += "%"
         if limit is not None:
