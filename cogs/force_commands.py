@@ -264,7 +264,7 @@ class ForceModal(Modal):
                          Image=image,
                          Colour=colour.strip('#'),
                          MemberCount=1,
-                         ServerID=interaction.guild_id)
+                         GuildID=interaction.guild_id)
 
         if self.edit:
             forces = db["Forces"]

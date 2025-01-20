@@ -1,7 +1,12 @@
 import discord
+from typing import Union
+from classes.user import User
+from classes.form import Form
 from shared import validation
+from connection import Connection
 class Force:
     def __init__(self,
+                 Owner: int,
                  Name: str,
                  Link: str,
                  Leader: int,
@@ -9,17 +14,20 @@ class Force:
                  Image: str = None,
                  Colour: str = None,
                  Ranking: int = 0,
-                 MemberCount: int = 0,
-                 Members: dict = [],
                  RoleID: int = 0,
-                 ServerID: int = None,
-                 NestID: int = None):
-        #loops through arguments and sets them as attributes of the class
-        args = locals()
-        for k, v in args.items():
-            if k == "self": continue
-            if k.startswith("__"): continue
-            setattr(self, k, v)
+                 GuildID: int = None,
+                 id:int|None = None):
+        self.id = id
+        self.owner = Owner
+        self.name = Name
+        self.link = Link
+        self.leader = Leader
+        self.desc = Desc
+        self.Image = Image
+        self.colour = Colour
+        self.ranking = Ranking
+        self.roleId = RoleID
+        self.guildId = GuildID
 
     #converts Force to dict for database purposes.
     def to_dict(self):
@@ -179,15 +187,12 @@ class Force:
                     slot += 1
         return discord.File(generatedImagePath)
 
-    def save(self):
-        forces = db["Forces"]
-        for i in forces:
-            if i["Name"] == self.Name:
-                forces[forces.index(i)] = self.to_dict()
-                break
-        else:
-            return None
-
+    def AddtoDb(self):
+        sql = "insert into forces(owner,name,leader,link,desc,image,color,role_id,guild_id) values (?,?,?,?,?,?,?,?,?)"
+        with Connection() as db:
+            db.execute(sql, (self.owner,self.name,self.leader,self.link,self.desc,self.image,self.color,self.colour,self.roleId,self.guildId))
+            db.commit()
+            return True
     #searches the database for the force by name then returns the object
     def sortMembersByRole(self):
         roles = []
@@ -230,17 +235,29 @@ class Force:
 
     def getForceNest(self):
         return ForceNest.searchDatabase(self.NestID)
-
     @staticmethod
-    def searchDatabase(name, Strict=False):
-        if not Strict:
-            for i in db["Forces"]:
-                if i["Name"].casefold().startswith(name.casefold()):
-                    return Force(**i)
-            else:
-                return None
+    def force_factory(cursor, row) -> 'Force':
+        fields = [column[0] for column in cursor.description]
+        return Force(**{key: value for key, value in zip(fields, row)})
+    @staticmethod
+    def searchDbByName(name, Strict=False) -> Union['Force',None]:
+        if Strict:
+            sql = "select owner,name,leader,link,desc,image,color,role_id,guild_id,id from forces where name = ? limit 1"
         else:
-            for i in db["Forces"]:
-                if i["Name"] == name: return Force(**i)
-            else:
-                return None
+            name+='%'
+            sql = "select owner,name,leader,link,desc,image,color,role_id,guild_id,id from forces where name like ? limit 1"
+        with Connection() as db:
+            db.row_factory = Force.force_factory
+            cursor = db.cursor()
+            cursor.execute(sql,(name,))
+            force = cursor.fetchone()
+            return force
+    @staticmethod
+    def GetById(id) -> Union['Force',None]:
+        sql = "select owner,name,leader,link,desc,image,color,role_id,guild_id,id from forces where id = ?"
+        with Connection() as db:
+            db.row_factory = Force.force_factory
+            cursor = db.cursor()
+            cursor.execute(sql,(id,))
+            force = cursor.fetchone()
+            return force
